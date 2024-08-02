@@ -1,0 +1,66 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.example.securekeep">
+
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@drawable/icon"
+        android:label="@string/app_name"
+        android:roundIcon="@drawable/icon"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.SecureKeep"
+        tools:targetApi="31">
+
+        <!-- Activities -->
+        <activity
+            android:name=".EarphonesActivity"
+            android:exported="false" />
+        <activity
+            android:name=".OverChargeActivity"
+            android:exported="false" />
+        <activity
+            android:name=".WifiActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ChargeDetectActivity"
+            android:exported="false" />
+        <activity
+            android:name=".AntiPocketActivity"
+            android:exported="false"
+            android:theme="@style/Theme.SecureKeep" />
+        <activity
+            android:name=".TouchPhoneActivity"
+            android:exported="false" />
+        <activity
+            android:name=".IntruderActivity"
+            android:exported="false" />
+        <activity
+            android:name=".SplashScreen"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".MainActivity"
+            android:exported="true" />
+
+        <!-- Accessibility Service -->
+        <service
+            android:name=".TouchDetectionService"
+            android:exported="true"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
+    </application>
+
+</manifest>

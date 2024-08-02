@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/wifiDetect"
+        android:icon="@drawable/wifi"
+        android:title="@string/wifi_detection"/>
+
+    <item
+        android:id="@+id/earphoneDetect"
+        android:icon="@drawable/headphone"
+        android:title="@string/earphones_detections"/>
+
+    <item
+        android:id="@+id/touchDetect"
+        android:icon="@drawable/touch"
+        android:title="@string/don_t_touch_my_phone"/>
+
+    <item
+        android:id="@+id/intruder"
+        android:icon="@drawable/intruder"
+        android:title="@string/intruder_alert"/>
+
+    <item
+        android:id="@+id/chargeDetect"
+        android:icon="@drawable/phone_charge"
+        android:title="@string/charging_detection"/>
+
+    <item
+        android:id="@+id/pocketDetect"
+        android:icon="@drawable/pocket"
+        android:title="@string/anti_pocket_detection"/>
+
+</menu>
