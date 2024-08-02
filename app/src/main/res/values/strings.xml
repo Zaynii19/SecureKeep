@@ -63,4 +63,6 @@
     <string name="on_flash_while_ringing">on flash while ringing</string>
     <string name="vibrate">vibrate</string>
     <string name="vibrate_while_ringing">vibrate while ringing</string>
+    <string name="ringtone_1">ringtone 1</string>
+    <string name="bulgur_alarm">bulgur alarm</string>
 </resources>
