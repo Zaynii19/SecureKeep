@@ -5,10 +5,11 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ChargeDetectActivity"
+    tools:context=".TouchPhoneActivity"
     android:background="@color/white">
 
     <LinearLayout
+        android:id="@+id/linearLayout"
         android:layout_width="match_parent"
         android:layout_height="80dp"
         android:layout_marginTop="4dp"
@@ -23,9 +24,9 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_gravity="start"
-            android:padding="20dp"
             android:layout_weight="1"
             android:contentDescription="@string/back"
+            android:padding="20dp"
             android:scaleType="fitCenter"
             app:srcCompat="@drawable/back"
             app:tint="@color/black" />
@@ -35,9 +36,9 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
-            android:text="@string/charging_detection"
-            android:gravity="center"
             android:layout_weight="3"
+            android:gravity="center"
+            android:text="@string/charging_detection"
             android:textColor="@color/black"
             android:textSize="20sp"
             android:textStyle="bold" />
@@ -48,12 +49,221 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_gravity="end"
-            android:padding="25dp"
             android:layout_weight="1"
             android:contentDescription="@string/settings"
+            android:padding="25dp"
             android:scaleType="fitCenter"
             app:srcCompat="@drawable/setting"
             app:tint="@color/black" />
     </LinearLayout>
+
+    <ImageView
+        android:id="@+id/powerBtn"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_marginTop="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/linearLayout"
+        app:srcCompat="@drawable/power_on" />
+
+    <GridLayout
+        android:id="@+id/gridLayout"
+        android:layout_width="350dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:background="@color/white"
+        android:columnCount="2"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.491"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/activateText">
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/flashCard"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="start"
+            android:layout_margin="8dp"
+            android:backgroundTint="@color/white"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="10dp">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="10dp"
+                android:background="@color/white"
+                android:orientation="horizontal">
+
+                <ImageButton
+                    android:id="@+id/flashBtn"
+                    style="@style/Widget.AppCompat.Button.Borderless"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:layout_marginEnd="20dp"
+                    android:contentDescription="@string/flash"
+                    android:padding="15dp"
+                    android:scaleType="fitCenter"
+                    app:srcCompat="@drawable/flash"
+                    app:tint="@color/black" />
+
+                <ImageButton
+                    android:id="@+id/switchBtnF"
+                    style="@style/Widget.AppCompat.Button.Borderless"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:contentDescription="@string/switchbtn"
+                    android:padding="15dp"
+                    android:scaleType="fitCenter"
+                    app:srcCompat="@drawable/switch_off" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="10dp"
+                android:layout_marginTop="60dp"
+                android:layout_marginBottom="10dp"
+                android:background="@color/white"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingTop="8dp"
+                    android:text="@string/flash_light"
+                    android:textColor="@color/black"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingTop="4dp"
+                    android:text="@string/on_flash_while_ringing"
+                    android:textColor="@color/black"
+                    android:textSize="14sp" />
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/vibrateCard"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:layout_margin="8dp"
+            android:backgroundTint="@color/white"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="10dp">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="10dp"
+                android:background="@color/white"
+                android:orientation="horizontal">
+
+                <ImageButton
+                    android:id="@+id/vibrateBtn"
+                    style="@style/Widget.AppCompat.Button.Borderless"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:layout_marginEnd="20dp"
+                    android:contentDescription="@string/vibrate"
+                    android:padding="15dp"
+                    android:scaleType="fitCenter"
+                    app:srcCompat="@drawable/vibrate"
+                    app:tint="@color/black" />
+
+                <ImageButton
+                    android:id="@+id/switchBtnV"
+                    style="@style/Widget.AppCompat.Button.Borderless"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:contentDescription="@string/switchbtn"
+                    android:padding="15dp"
+                    android:scaleType="fitCenter"
+                    app:srcCompat="@drawable/switch_off" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="10dp"
+                android:layout_marginTop="60dp"
+                android:layout_marginBottom="10dp"
+                android:background="@color/white"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingTop="8dp"
+                    android:text="@string/vibrate"
+                    android:textColor="@color/black"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingTop="4dp"
+                    android:text="@string/vibrate_while_ringing"
+                    android:textColor="@color/black"
+                    android:textSize="14sp" />
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+    </GridLayout>
+
+    <TextView
+        android:id="@+id/activateText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="@string/tap_to_activate"
+        android:textColor="@color/black"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="@+id/powerBtn"
+        app:layout_constraintHorizontal_bias="0.476"
+        app:layout_constraintStart_toStartOf="@+id/powerBtn"
+        app:layout_constraintTop_toBottomOf="@+id/powerBtn" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:layout_margin="20dp"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/gridLayout"
+        android:background="#16C31D">
+
+
+        <ImageView
+            android:id="@+id/idea"
+            android:layout_width="80dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            app:srcCompat="@drawable/idea"
+            app:tint="@color/white"
+            android:layout_marginHorizontal="10dp"/>
+
+        <TextView
+            android:id="@+id/textView5"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="18sp"
+            android:layout_gravity="center"
+            android:textColor="@color/white"
+            android:layout_marginEnd="10dp"
+            android:layout_marginVertical="8dp"
+            android:text="@string/for_best_results_always_turn_on_vibration_when_you_are_in_crowded_areas_and_also_turn_on_flash_at_night" />
+    </LinearLayout>
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

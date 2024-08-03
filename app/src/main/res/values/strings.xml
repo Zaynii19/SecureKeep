@@ -65,4 +65,7 @@
     <string name="vibrate_while_ringing">vibrate while ringing</string>
     <string name="ringtone_1">ringtone 1</string>
     <string name="bulgur_alarm">bulgur alarm</string>
+    <string name="enter_master_pin">Enter Master Pin</string>
+    <string name="tap_to_activate">Tap to Activate</string>
+    <string name="for_best_results_always_turn_on_vibration_when_you_are_in_crowded_areas_and_also_turn_on_flash_at_night">For best results always turn on vibration when you are in crowded areas and also turn on flash at night</string>
 </resources>
