@@ -55,22 +55,22 @@ class MainActivity : AppCompatActivity() {
         binding.navBar.setNavigationItemSelectedListener {
             when (it.itemId) {
                 R.id.wifiDetect ->{
-                    Toast.makeText(this, "Wifi Detect", Toast.LENGTH_SHORT).show()
+                    startActivity(Intent(this, WifiActivity::class.java))
                 }
                 R.id.earphoneDetect ->{
-                    Toast.makeText(this, "Earphones Detect", Toast.LENGTH_SHORT).show()
+                    startActivity(Intent(this, EarphonesActivity::class.java))
                 }
                 R.id.touchDetect -> {
-                    Toast.makeText(this, "Touch Detect", Toast.LENGTH_SHORT).show()
+                    startActivity(Intent(this, TouchPhoneActivity::class.java))
                 }
                 R.id.intruder ->{
-                    Toast.makeText(this, "Intruder Detect", Toast.LENGTH_SHORT).show()
+                    startActivity(Intent(this, IntruderActivity::class.java))
                 }
                 R.id.chargeDetect ->{
-                    Toast.makeText(this, "Charge Detect", Toast.LENGTH_SHORT).show()
+                    startActivity(Intent(this, ChargeDetectActivity::class.java))
                 }
                 R.id.pocketDetect -> {
-                    Toast.makeText(this, "Pocket Detect", Toast.LENGTH_SHORT).show()
+                    startActivity(Intent(this, AntiPocketActivity::class.java))
                 }
             }
             true

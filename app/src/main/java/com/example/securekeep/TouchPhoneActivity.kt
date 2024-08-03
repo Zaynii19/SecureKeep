@@ -64,6 +64,10 @@ class TouchPhoneActivity : AppCompatActivity(), SensorEventListener {
             insets
         }
 
+        binding.backBtn.setOnClickListener {
+            startActivity(Intent(this, MainActivity::class.java))
+        }
+
         // Initialize flash light service
         cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
         handler = android.os.Handler(Looper.getMainLooper())

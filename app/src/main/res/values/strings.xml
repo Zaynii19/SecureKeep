@@ -68,4 +68,15 @@
     <string name="enter_master_pin">Enter Master Pin</string>
     <string name="tap_to_activate">Tap to Activate</string>
     <string name="for_best_results_always_turn_on_vibration_when_you_are_in_crowded_areas_and_also_turn_on_flash_at_night">For best results always turn on vibration when you are in crowded areas and also turn on flash at night</string>
+    <string name="pin_attempt_setting">Pin Attempt Setting</string>
+    <string name="auto_photo_on_the_count_of_attempts">Auto-photo on the count of attempts</string>
+    <string name="wrong_pin_attempts">Wrong pin attempts</string>
+    <string name="none">None</string>
+    <string name="view_all">View all</string>
+    <string name="_0">0</string>
+    <string name="_1">1</string>
+    <string name="_2">2</string>
+    <string name="_3">3</string>
+    <string name="_4">4</string>
+    <string name="_5">5</string>
 </resources>
