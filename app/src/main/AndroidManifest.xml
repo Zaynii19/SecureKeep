@@ -4,12 +4,12 @@
     package="com.example.securekeep">
 
     <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-permission android:name="android.permission.CAMERA"/>
-    <uses-feature android:name="android.hardware.camera.flash"/>
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <uses-feature android:name="android.hardware.camera.flash" />
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
-
 
     <application
         android:allowBackup="true"
@@ -22,9 +22,13 @@
         android:theme="@style/Theme.SecureKeep"
         tools:targetApi="31">
         <activity
-            android:name=".EnterPinActivity"
+            android:name=".SettingActivity"
             android:exported="false" />
-        <!-- Activities -->
+        <activity
+            android:name=".EnterPinActivity"
+            android:exported="true" >
+        </activity>
+
         <activity
             android:name=".EarphonesActivity"
             android:exported="false" />

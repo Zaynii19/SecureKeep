@@ -26,5 +26,9 @@ class OverChargeActivity : AppCompatActivity() {
         binding.backBtn.setOnClickListener {
             startActivity(Intent(this, MainActivity::class.java))
         }
+
+        binding.settingBtn.setOnClickListener {
+            startActivity(Intent(this, SettingActivity::class.java))
+        }
     }
 }

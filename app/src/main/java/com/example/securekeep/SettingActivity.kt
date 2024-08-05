@@ -1,17 +1,15 @@
 package com.example.securekeep
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.example.securekeep.databinding.ActivityAntiPocketBinding
-import com.example.securekeep.databinding.ActivityWifiBinding
+import com.example.securekeep.databinding.ActivitySettingBinding
 
-class WifiActivity : AppCompatActivity() {
+class SettingActivity : AppCompatActivity() {
     private val binding by lazy {
-        ActivityWifiBinding.inflate(layoutInflater)
+        ActivitySettingBinding.inflate(layoutInflater)
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -21,14 +19,6 @@ class WifiActivity : AppCompatActivity() {
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
-        }
-
-        binding.backBtn.setOnClickListener {
-            startActivity(Intent(this, MainActivity::class.java))
-        }
-
-        binding.settingBtn.setOnClickListener {
-            startActivity(Intent(this, SettingActivity::class.java))
         }
     }
 }

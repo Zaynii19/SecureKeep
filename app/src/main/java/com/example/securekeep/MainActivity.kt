@@ -34,6 +34,10 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
+        binding.settingBtn.setOnClickListener {
+            startActivity(Intent(this, SettingActivity::class.java))
+        }
+
         // Define toggle
         toggle = ActionBarDrawerToggle(this, binding.main, binding.toolbar, R.string.open, R.string.close)
         binding.main.addDrawerListener(toggle)
@@ -75,8 +79,6 @@ class MainActivity : AppCompatActivity() {
             }
             true
         }
-
-
 
         binding.rcv.layoutManager = GridLayoutManager(this, 2)
         val adapter = RvAdapter(this, categoryList)

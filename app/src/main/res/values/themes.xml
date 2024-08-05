@@ -6,4 +6,5 @@
     </style>
 
     <style name="Theme.SecureKeep" parent="Base.Theme.SecureKeep" />
+
 </resources>
