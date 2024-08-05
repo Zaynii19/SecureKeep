@@ -1,12 +1,10 @@
 package com.example.securekeep
 
 import android.content.Intent
-import android.graphics.Color
 import android.os.Bundle
-import android.widget.Toast
+import android.util.Log
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.ActionBarDrawerToggle
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -14,7 +12,6 @@ import androidx.recyclerview.widget.GridLayoutManager
 import com.example.securekeep.RCV.RCVModel
 import com.example.securekeep.RCV.RvAdapter
 import com.example.securekeep.databinding.ActivityMainBinding
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class MainActivity : AppCompatActivity() {
     private val binding by lazy {
