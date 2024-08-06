@@ -1,18 +1,50 @@
 package com.example.securekeep
 
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.net.ConnectivityManager
 import android.os.Bundle
+import android.os.CountDownTimer
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.example.securekeep.databinding.ActivityAntiPocketBinding
 import com.example.securekeep.databinding.ActivityWifiBinding
 
 class WifiActivity : AppCompatActivity() {
     private val binding by lazy {
         ActivityWifiBinding.inflate(layoutInflater)
     }
+    private lateinit var alertDialog: AlertDialog
+    private var isAlarmActive = false
+    private var isVibrate = false
+    private var isFlash = false
+    private var isReceiverRegistered = false
+    private var lastWifiState: Boolean? = null
+    private val ENTER_PIN_REQUEST_CODE = 1
+
+    private val wifiReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            val currentWifiState = isWifiConnected()
+            if (lastWifiState == null) { // Initial check after activation
+                lastWifiState = currentWifiState
+                if (!currentWifiState) {
+                    // Don't trigger alarm here, instead wait for the next state change
+                }
+                return
+            }
+
+            if (lastWifiState != currentWifiState) {
+                lastWifiState = currentWifiState
+                triggerAlarm()
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -29,6 +61,103 @@ class WifiActivity : AppCompatActivity() {
 
         binding.settingBtn.setOnClickListener {
             startActivity(Intent(this, SettingActivity::class.java))
+        }
+
+        alertDialog = AlertDialog.Builder(this)
+            .setTitle("Will Be Activated In 10 Seconds")
+            .setMessage("00:10")
+            .setCancelable(false)
+            .create()
+
+        binding.powerBtn.setOnClickListener {
+            if (!isAlarmActive) {
+                isAlarmActive = true
+                alertDialog.show()
+
+                object : CountDownTimer(10000, 1000) {
+                    override fun onTick(millisUntilFinished: Long) {
+                        alertDialog.setMessage("00:${millisUntilFinished / 1000}")
+                    }
+
+                    override fun onFinish() {
+                        if (alertDialog.isShowing) {
+                            alertDialog.dismiss()
+                        }
+                        Toast.makeText(this@WifiActivity, "Wi-Fi Detection Mode Activated", Toast.LENGTH_SHORT).show()
+                        binding.powerBtn.setImageResource(R.drawable.power_off)
+                        startWifiDetection()
+                    }
+                }.start()
+            } else {
+                stopWifiDetection()
+            }
+        }
+
+        binding.switchBtnV.setOnClickListener {
+            isVibrate = !isVibrate
+            binding.switchBtnV.setImageResource(if (isVibrate) R.drawable.switch_on else R.drawable.switch_off)
+            Toast.makeText(this, if (isVibrate) "Vibration Enabled" else "Vibration Disabled", Toast.LENGTH_SHORT).show()
+        }
+
+        binding.switchBtnF.setOnClickListener {
+            isFlash = !isFlash
+            binding.switchBtnF.setImageResource(if (isFlash) R.drawable.switch_on else R.drawable.switch_off)
+            Toast.makeText(this, if (isFlash) "Flash Turned on" else "Flash Turned off", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun isWifiConnected(): Boolean {
+        val connManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val networkInfo = connManager.activeNetworkInfo
+        return networkInfo?.type == ConnectivityManager.TYPE_WIFI && networkInfo.isConnected
+    }
+
+    private fun startWifiDetection() {
+        lastWifiState = isWifiConnected()
+        val filter = IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION)
+        registerReceiver(wifiReceiver, filter)
+        isReceiverRegistered = true
+    }
+
+    private fun triggerAlarm() {
+        if (isAlarmActive) {
+            Toast.makeText(this, "Wi-Fi state changed! Enter PIN", Toast.LENGTH_SHORT).show()
+            val alarmIntent = Intent(this, EnterPinActivity::class.java)
+            alarmIntent.putExtra("IS_VIBRATE", isVibrate)
+            alarmIntent.putExtra("IS_FLASH", isFlash)
+            startActivityForResult(alarmIntent, ENTER_PIN_REQUEST_CODE)
+        }
+    }
+
+    @Deprecated("This method has been deprecated in favor of using the Activity Result API")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == ENTER_PIN_REQUEST_CODE && resultCode == RESULT_OK) {
+            stopWifiDetection() // Stop Wi-Fi detection when alarm is deactivated
+        }
+    }
+
+    private fun stopWifiDetection() {
+        Toast.makeText(this@WifiActivity, "Wi-Fi Detection Mode Deactivated", Toast.LENGTH_SHORT).show()
+        binding.powerBtn.setImageResource(R.drawable.power_on)
+        isAlarmActive = false
+
+        isFlash = false
+        binding.switchBtnF.setImageResource(R.drawable.switch_off)
+
+        isVibrate = false
+        binding.switchBtnV.setImageResource(R.drawable.switch_off)
+
+        if (isReceiverRegistered) {
+            unregisterReceiver(wifiReceiver)
+            isReceiverRegistered = false
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (isReceiverRegistered) {
+            unregisterReceiver(wifiReceiver)
         }
     }
 }

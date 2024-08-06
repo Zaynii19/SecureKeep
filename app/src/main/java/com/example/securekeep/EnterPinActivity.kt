@@ -1,5 +1,6 @@
 package com.example.securekeep
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
@@ -129,13 +130,15 @@ class EnterPinActivity : AppCompatActivity() {
         if (enteredPin.length == 4) {
             if (enteredPin == setPin) {
                 stopAlarm()
-                startActivity(Intent(this, MainActivity::class.java))
+                val resultIntent = Intent()
+                setResult(Activity.RESULT_OK, resultIntent)
                 finish()
             } else {
                 Toast.makeText(this, "Wrong Pin", Toast.LENGTH_SHORT).show()
             }
         }
     }
+
 
     private fun triggerAlarm() {
         mediaPlayer?.apply {
