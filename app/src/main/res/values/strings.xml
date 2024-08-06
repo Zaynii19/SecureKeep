@@ -83,7 +83,7 @@
     <string name="alarm_sound">Alarm Sound</string>
     <string name="settings2">Settings</string>
     <string name="motion_alarm_sensitivity">Motion Alarm Sensitivity</string>
-    <string name="adjust_senstivity_for_motion_detection">Adjust senstivity for motion detection</string>
+    <string name="adjust_senstivity_for_motion_detection">Adjust sensitivity for motion detection</string>
     <string name="adjust_sensitivity_for_motion_detection">Adjust sensitivity for motion detection</string>
     <string name="set_alarm_tone">Set Alarm Tone</string>
     <string name="pin_code">Pin Code</string>
