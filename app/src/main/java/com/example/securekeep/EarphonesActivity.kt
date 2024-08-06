@@ -1,18 +1,40 @@
 package com.example.securekeep
 
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.media.AudioManager
 import android.os.Bundle
+import android.os.CountDownTimer
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.example.securekeep.databinding.ActivityAntiPocketBinding
 import com.example.securekeep.databinding.ActivityEarphonesBinding
 
 class EarphonesActivity : AppCompatActivity() {
     private val binding by lazy {
         ActivityEarphonesBinding.inflate(layoutInflater)
     }
+    private lateinit var alertDialog: AlertDialog
+    private var isAlarmActive = false
+    private var isReceiverRegistered = false
+    private var isVibrate = false
+    private var isFlash = false
+    private val ENTER_PIN_REQUEST_CODE = 1
+
+    private val audioReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            val state = intent.getIntExtra(AudioManager.EXTRA_SCO_AUDIO_STATE, -1)
+            if (state == AudioManager.SCO_AUDIO_STATE_CONNECTED) {
+                triggerAlarm()
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -29,6 +51,104 @@ class EarphonesActivity : AppCompatActivity() {
 
         binding.settingBtn.setOnClickListener {
             startActivity(Intent(this, SettingActivity::class.java))
+        }
+
+        alertDialog = AlertDialog.Builder(this)
+            .setTitle("Will Be Activated In 10 Seconds")
+            .setMessage("00:10")
+            .setCancelable(false)
+            .create()
+
+
+        if (isEarphonesConnected()){
+            binding.powerBtn.setImageResource(R.drawable.power_on)
+            binding.activateText.text = getString(R.string.tap_to_activate)
+            binding.powerBtn.setOnClickListener {
+                if (!isAlarmActive) {
+                    isAlarmActive = true
+                    alertDialog.show()
+
+                    object : CountDownTimer(10000, 1000) {
+                        override fun onTick(millisUntilFinished: Long) {
+                            alertDialog.setMessage("00:${millisUntilFinished / 1000}")
+                        }
+
+                        override fun onFinish() {
+                            if (alertDialog.isShowing) {
+                                alertDialog.dismiss()
+                            }
+                            Toast.makeText(this@EarphonesActivity, "Earphone Detection Mode Activated", Toast.LENGTH_SHORT).show()
+                            binding.powerBtn.setImageResource(R.drawable.power_off)
+                            startEarphoneDetection()
+                        }
+                    }.start()
+                } else {
+                    stopEarphoneDetection()
+                }
+            }
+        }else{
+            Toast.makeText(this@EarphonesActivity, "Connect Earphones First", Toast.LENGTH_SHORT).show()
+        }
+
+
+        binding.switchBtnV.setOnClickListener {
+            isVibrate = !isVibrate
+            binding.switchBtnV.setImageResource(if (isVibrate) R.drawable.switch_on else R.drawable.switch_off)
+            Toast.makeText(this, if (isVibrate) "Vibration Enabled" else "Vibration Disabled", Toast.LENGTH_SHORT).show()
+        }
+
+        binding.switchBtnF.setOnClickListener {
+            isFlash = !isFlash
+            binding.switchBtnF.setImageResource(if (isFlash) R.drawable.switch_on else R.drawable.switch_off)
+            Toast.makeText(this, if (isFlash) "Flash Turned on" else "Flash Turned off", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun startEarphoneDetection() {
+        val filter = IntentFilter(AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED)
+        registerReceiver(audioReceiver, filter)
+        isReceiverRegistered = true
+    }
+
+    private fun isEarphonesConnected(): Boolean {
+        val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        val headphonesConnected = audioManager.isWiredHeadsetOn
+        return headphonesConnected
+    }
+
+    private fun triggerAlarm() {
+        if (isAlarmActive) {
+            Toast.makeText(this, "Earphones connected! Enter PIN", Toast.LENGTH_SHORT).show()
+            val alarmIntent = Intent(this, EnterPinActivity::class.java)
+            alarmIntent.putExtra("IS_VIBRATE", isVibrate)
+            alarmIntent.putExtra("IS_FLASH", isFlash)
+            startActivityForResult(alarmIntent, ENTER_PIN_REQUEST_CODE)
+        }
+    }
+
+    @Deprecated("This method has been deprecated in favor of using the Activity Result API")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == ENTER_PIN_REQUEST_CODE && resultCode == RESULT_OK) {
+            stopEarphoneDetection() // Stop earphone detection when alarm is deactivated
+        }
+    }
+
+    private fun stopEarphoneDetection() {
+        Toast.makeText(this@EarphonesActivity, "Earphone Detection Mode Deactivated", Toast.LENGTH_SHORT).show()
+        binding.powerBtn.setImageResource(R.drawable.power_on)
+        isAlarmActive = false
+
+        if (isReceiverRegistered) {
+            unregisterReceiver(audioReceiver)
+            isReceiverRegistered = false
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (isReceiverRegistered) {
+            unregisterReceiver(audioReceiver)
         }
     }
 }

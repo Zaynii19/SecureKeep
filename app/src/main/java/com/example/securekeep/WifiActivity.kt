@@ -32,9 +32,6 @@ class WifiActivity : AppCompatActivity() {
             val currentWifiState = isWifiConnected()
             if (lastWifiState == null) { // Initial check after activation
                 lastWifiState = currentWifiState
-                if (!currentWifiState) {
-                    // Don't trigger alarm here, instead wait for the next state change
-                }
                 return
             }
 
