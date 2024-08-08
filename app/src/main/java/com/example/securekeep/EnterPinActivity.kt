@@ -132,6 +132,7 @@ class EnterPinActivity : AppCompatActivity() {
                 stopAlarm()
                 val resultIntent = Intent()
                 setResult(Activity.RESULT_OK, resultIntent)
+                startActivity(Intent(this@EnterPinActivity, MainActivity::class.java))
                 finish()
             } else {
                 Toast.makeText(this, "Wrong Pin", Toast.LENGTH_SHORT).show()

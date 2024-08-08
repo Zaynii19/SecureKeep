@@ -61,20 +61,15 @@ class EarphonesActivity : AppCompatActivity() {
             insets
         }
 
-        // Check for Bluetooth permissions
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
-            != PackageManager.PERMISSION_GRANTED) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                ActivityCompat.requestPermissions(this,
-                    arrayOf(Manifest.permission.BLUETOOTH_CONNECT),
-                    REQUEST_CODE_BLUETOOTH_PERMISSION)
-            }
-        } else {
-            setupUI() // Initialize UI if permission is already granted
-        }
-    }
+        // Retrieve saved states
+        val preferences = getPreferences(MODE_PRIVATE)
+        isAlarmActive = preferences.getBoolean("AlarmStatus", false)
+        isVibrate = preferences.getBoolean("VibrateStatus", false)
+        isFlash = preferences.getBoolean("FlashStatus", false)
+        updateUI()
 
-    private fun setupUI() {
+        checkBluetoothPermissions()
+
         binding.backBtn.setOnClickListener {
             startActivity(Intent(this, MainActivity::class.java))
         }
@@ -89,12 +84,20 @@ class EarphonesActivity : AppCompatActivity() {
             .setCancelable(false)
             .create()
 
-        if (isEarphonesConnected()){
-            binding.powerBtn.setImageResource(R.drawable.power_on)
-            binding.activateText.text = getString(R.string.tap_to_activate)
-            binding.powerBtn.setOnClickListener {
-                if (!isAlarmActive) {
+        binding.powerBtn.setOnClickListener {
+            if (isEarphonesConnected()) {
+                if (isAlarmActive) {
+                    isAlarmActive = false
+                    // Deactivate the alarm
+                    stopEarphoneDetection()
+                    Toast.makeText(this, "Earphones Detection Mode Deactivated", Toast.LENGTH_SHORT).show()
+                } else {
+                    // Activate the alarm
                     isAlarmActive = true
+                    val editor = getPreferences(MODE_PRIVATE).edit()
+                    editor.putBoolean("AlarmStatus", isAlarmActive)
+                    editor.apply()
+
                     alertDialog.show()
 
                     object : CountDownTimer(10000, 1000) {
@@ -106,42 +109,75 @@ class EarphonesActivity : AppCompatActivity() {
                             if (alertDialog.isShowing) {
                                 alertDialog.dismiss()
                             }
-                            Toast.makeText(this@EarphonesActivity, "Earphone Detection Mode Activated", Toast.LENGTH_SHORT).show()
-                            binding.powerBtn.setImageResource(R.drawable.power_off)
+                            Toast.makeText(this@EarphonesActivity, "Earphones Detection Mode Activated", Toast.LENGTH_SHORT).show()
+                            updateUI()
                             startEarphoneDetection()
                         }
                     }.start()
-                } else {
-                    stopEarphoneDetection()
                 }
+            } else {
+                Toast.makeText(this@EarphonesActivity, "Connect Earphones First", Toast.LENGTH_SHORT).show()
             }
-        } else{
-            Toast.makeText(this@EarphonesActivity, "Connect Earphones First", Toast.LENGTH_SHORT).show()
         }
 
         binding.switchBtnV.setOnClickListener {
             isVibrate = !isVibrate
             binding.switchBtnV.setImageResource(if (isVibrate) R.drawable.switch_on else R.drawable.switch_off)
             Toast.makeText(this, if (isVibrate) "Vibration Enabled" else "Vibration Disabled", Toast.LENGTH_SHORT).show()
+
+            val editor = getPreferences(MODE_PRIVATE).edit()
+            editor.putBoolean("VibrateStatus", isVibrate)
+            editor.apply()
         }
 
         binding.switchBtnF.setOnClickListener {
             isFlash = !isFlash
             binding.switchBtnF.setImageResource(if (isFlash) R.drawable.switch_on else R.drawable.switch_off)
             Toast.makeText(this, if (isFlash) "Flash Turned on" else "Flash Turned off", Toast.LENGTH_SHORT).show()
+
+            val editor = getPreferences(MODE_PRIVATE).edit()
+            editor.putBoolean("FlashStatus", isFlash)
+            editor.apply()
         }
     }
 
-    private fun startEarphoneDetection() {
-        if (isWiredHeadsetConnected()) {
-            val filter = IntentFilter(AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED)
-            registerReceiver(audioReceiver, filter)
-            isReceiverRegistered = true
-        } else if (isBluetoothHeadsetConnected()) {
-            val bluetoothFilter = IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECTED)
-            registerReceiver(bluetoothReceiver, bluetoothFilter)
-            isReceiverRegistered = true
+
+    private fun checkBluetoothPermissions() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
+            != PackageManager.PERMISSION_GRANTED) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                ActivityCompat.requestPermissions(this,
+                    arrayOf(Manifest.permission.BLUETOOTH_CONNECT),
+                    REQUEST_CODE_BLUETOOTH_PERMISSION)
+            }
+        } else {
+            setupUI()
         }
+    }
+
+    private fun setupUI() {
+        if (isEarphonesConnected()) {
+            if (isAlarmActive) {
+                startEarphoneDetection()
+            }
+        } else {
+            Toast.makeText(this@EarphonesActivity, "Connect Earphones First", Toast.LENGTH_SHORT).show()
+            binding.powerBtn.setImageResource(R.drawable.earbuds)
+            binding.powerBtn.setOnClickListener(null)
+        }
+    }
+
+    private fun updateUI() {
+        if (isEarphonesConnected()) {
+            binding.powerBtn.setImageResource(if (isAlarmActive) R.drawable.power_off else R.drawable.power_on)
+            binding.activateText.text = getString(if (isAlarmActive) R.string.tap_to_deactivate else R.string.tap_to_activate)
+        } else {
+            binding.powerBtn.setImageResource(R.drawable.charger)
+            binding.activateText.text = getString(R.string.please_connect_earphones)
+        }
+
+        binding.switchBtnV.setImageResource(if (isVibrate) R.drawable.switch_on else R.drawable.switch_off)
+        binding.switchBtnF.setImageResource(if (isFlash) R.drawable.switch_on else R.drawable.switch_off)
     }
 
     private fun isEarphonesConnected(): Boolean {
@@ -167,6 +203,16 @@ class EarphonesActivity : AppCompatActivity() {
 
     private fun triggerAlarm() {
         if (isAlarmActive) {
+            isAlarmActive = false
+
+            // Update the UI after deactivating the alarm
+            updateUI()
+
+            // Save the updated alarm status
+            val editor = getPreferences(MODE_PRIVATE).edit()
+            editor.putBoolean("AlarmStatus", isAlarmActive)
+            editor.apply()
+
             Toast.makeText(this, "Earphones disconnected! Enter PIN", Toast.LENGTH_SHORT).show()
             val alarmIntent = Intent(this, EnterPinActivity::class.java)
             alarmIntent.putExtra("IS_VIBRATE", isVibrate)
@@ -175,48 +221,71 @@ class EarphonesActivity : AppCompatActivity() {
         }
     }
 
-    @Deprecated("This method has been deprecated in favor of using the Activity Result API")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == ENTER_PIN_REQUEST_CODE && resultCode == RESULT_OK) {
-            stopEarphoneDetection() // Stop earphone detection when alarm is deactivated
+            stopEarphoneDetection()
+        }
+    }
+
+    private fun startEarphoneDetection() {
+        if (isWiredHeadsetConnected()) {
+            val filter = IntentFilter(AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED)
+            registerReceiver(audioReceiver, filter)
+            isReceiverRegistered = true
+        } else if (isBluetoothHeadsetConnected()) {
+            val bluetoothFilter = IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECTED)
+            registerReceiver(bluetoothReceiver, bluetoothFilter)
+            isReceiverRegistered = true
         }
     }
 
     private fun stopEarphoneDetection() {
-        Toast.makeText(this@EarphonesActivity, "Earphone Detection Mode Deactivated", Toast.LENGTH_SHORT).show()
-        binding.powerBtn.setImageResource(R.drawable.power_on)
-        isAlarmActive = false
+        if (isWiredHeadsetConnected()) {
+            isAlarmActive = false
+            if (isReceiverRegistered) {
+                unregisterReceiver(audioReceiver)
+                isFlash = false
+                binding.switchBtnF.setImageResource(R.drawable.switch_off)
 
-        isFlash = false
-        binding.switchBtnF.setImageResource(R.drawable.switch_off)
+                isVibrate = false
+                binding.switchBtnV.setImageResource(R.drawable.switch_off)
+                updateUI()
+                // Save the updated alarm status
+                val editor = getPreferences(MODE_PRIVATE).edit()
+                editor.putBoolean("AlarmStatus", isAlarmActive)
+                editor.apply()
 
-        isVibrate = false
-        binding.switchBtnV.setImageResource(R.drawable.switch_off)
+            }
+        } else if (isBluetoothHeadsetConnected()){
+            if (isReceiverRegistered) {
+                unregisterReceiver(bluetoothReceiver)
+                isFlash = false
+                binding.switchBtnF.setImageResource(R.drawable.switch_off)
 
-        if (isReceiverRegistered) {
-            unregisterReceiver(audioReceiver)
-            unregisterReceiver(bluetoothReceiver)
-            isReceiverRegistered = false
-        }
-    }
-
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQUEST_CODE_BLUETOOTH_PERMISSION) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                setupUI() // Initialize UI if permission is granted
-            } else {
-                Toast.makeText(this, "Bluetooth permission is required for this feature", Toast.LENGTH_SHORT).show()
+                isVibrate = false
+                binding.switchBtnV.setImageResource(R.drawable.switch_off)
+                isReceiverRegistered = false
+                updateUI()
+                // Save the updated alarm status
+                val editor = getPreferences(MODE_PRIVATE).edit()
+                editor.putBoolean("AlarmStatus", isAlarmActive)
+                editor.apply()
             }
         }
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        if (isReceiverRegistered) {
-            unregisterReceiver(audioReceiver)
-            unregisterReceiver(bluetoothReceiver)
+        if (isWiredHeadsetConnected()) {
+            isAlarmActive = false
+            if (isReceiverRegistered) {
+                unregisterReceiver(audioReceiver)
+
+            } else if (isBluetoothHeadsetConnected()){
+                unregisterReceiver(bluetoothReceiver)
+                isReceiverRegistered = false
+            }
         }
     }
 }

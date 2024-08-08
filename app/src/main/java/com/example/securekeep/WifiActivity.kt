@@ -34,7 +34,6 @@ class WifiActivity : AppCompatActivity() {
                 lastWifiState = currentWifiState
                 return
             }
-
             if (lastWifiState != currentWifiState) {
                 lastWifiState = currentWifiState
                 triggerAlarm()
@@ -51,6 +50,14 @@ class WifiActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+
+        // Retrieving selected attempts, alert status
+        val preferences = getPreferences(MODE_PRIVATE)
+        isAlarmActive = preferences.getBoolean("AlarmStatus", false)
+        isVibrate = preferences.getBoolean("VibrateStatus", false)
+        isFlash = preferences.getBoolean("FlashStatus", false)
+
+        updateUI()
 
         binding.backBtn.setOnClickListener {
             startActivity(Intent(this, MainActivity::class.java))
@@ -69,6 +76,12 @@ class WifiActivity : AppCompatActivity() {
         binding.powerBtn.setOnClickListener {
             if (!isAlarmActive) {
                 isAlarmActive = true
+
+                // Storing alarmStatus value in shared preferences
+                val editor = getPreferences(MODE_PRIVATE).edit()
+                editor.putBoolean("AlarmStatus", isAlarmActive)
+                editor.apply()
+
                 alertDialog.show()
 
                 object : CountDownTimer(10000, 1000) {
@@ -81,7 +94,7 @@ class WifiActivity : AppCompatActivity() {
                             alertDialog.dismiss()
                         }
                         Toast.makeText(this@WifiActivity, "Wi-Fi Detection Mode Activated", Toast.LENGTH_SHORT).show()
-                        binding.powerBtn.setImageResource(R.drawable.power_off)
+                        updateUI()
                         startWifiDetection()
                     }
                 }.start()
@@ -94,13 +107,37 @@ class WifiActivity : AppCompatActivity() {
             isVibrate = !isVibrate
             binding.switchBtnV.setImageResource(if (isVibrate) R.drawable.switch_on else R.drawable.switch_off)
             Toast.makeText(this, if (isVibrate) "Vibration Enabled" else "Vibration Disabled", Toast.LENGTH_SHORT).show()
+
+            // Storing vibrate status value in shared preferences
+            val editor = getPreferences(MODE_PRIVATE).edit()
+            editor.putBoolean("VibrateStatus", isVibrate)
+            editor.apply()
         }
 
         binding.switchBtnF.setOnClickListener {
             isFlash = !isFlash
             binding.switchBtnF.setImageResource(if (isFlash) R.drawable.switch_on else R.drawable.switch_off)
             Toast.makeText(this, if (isFlash) "Flash Turned on" else "Flash Turned off", Toast.LENGTH_SHORT).show()
+
+            // Storing flash status value in shared preferences
+            val editor = getPreferences(MODE_PRIVATE).edit()
+            editor.putBoolean("FlashStatus", isFlash)
+            editor.apply()
         }
+    }
+
+    private fun updateUI() {
+        if (isAlarmActive) {
+            binding.powerBtn.setImageResource(R.drawable.power_off)
+            binding.activateText.text = getString(R.string.tap_to_deactivate)
+            startWifiDetection()
+        } else {
+            binding.powerBtn.setImageResource(R.drawable.power_on)
+            binding.activateText.text = getString(R.string.tap_to_activate)
+        }
+
+        binding.switchBtnV.setImageResource(if (isVibrate) R.drawable.switch_on else R.drawable.switch_off)
+        binding.switchBtnF.setImageResource(if (isFlash) R.drawable.switch_on else R.drawable.switch_off)
     }
 
     private fun isWifiConnected(): Boolean {
@@ -118,6 +155,16 @@ class WifiActivity : AppCompatActivity() {
 
     private fun triggerAlarm() {
         if (isAlarmActive) {
+
+            isAlarmActive = false
+            // Update the UI after deactivating the alarm
+            updateUI()
+
+            // Save the updated alarm status
+            val editor = getPreferences(MODE_PRIVATE).edit()
+            editor.putBoolean("AlarmStatus", isAlarmActive)
+            editor.apply()
+
             Toast.makeText(this, "Wi-Fi state changed! Enter PIN", Toast.LENGTH_SHORT).show()
             val alarmIntent = Intent(this, EnterPinActivity::class.java)
             alarmIntent.putExtra("IS_VIBRATE", isVibrate)
@@ -126,7 +173,6 @@ class WifiActivity : AppCompatActivity() {
         }
     }
 
-    @Deprecated("This method has been deprecated in favor of using the Activity Result API")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == ENTER_PIN_REQUEST_CODE && resultCode == RESULT_OK) {
@@ -137,6 +183,7 @@ class WifiActivity : AppCompatActivity() {
     private fun stopWifiDetection() {
         Toast.makeText(this@WifiActivity, "Wi-Fi Detection Mode Deactivated", Toast.LENGTH_SHORT).show()
         binding.powerBtn.setImageResource(R.drawable.power_on)
+        binding.activateText.text = getString(R.string.tap_to_activate)
         isAlarmActive = false
 
         isFlash = false
@@ -149,6 +196,11 @@ class WifiActivity : AppCompatActivity() {
             unregisterReceiver(wifiReceiver)
             isReceiverRegistered = false
         }
+
+        // Storing alarmStatus value in shared preferences
+        val editor = getPreferences(MODE_PRIVATE).edit()
+        editor.putBoolean("AlarmStatus", isAlarmActive)
+        editor.apply()
     }
 
     override fun onDestroy() {

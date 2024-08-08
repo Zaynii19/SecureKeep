@@ -45,8 +45,6 @@ class OverChargeActivity : AppCompatActivity() {
         }
     }
 
-
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -56,6 +54,14 @@ class OverChargeActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+
+        // Retrieving selected attempts, alert status
+        val preferences = getPreferences(MODE_PRIVATE)
+        isAlarmActive = preferences.getBoolean("AlarmStatus", false)
+        isVibrate = preferences.getBoolean("VibrateStatus", false)
+        isFlash = preferences.getBoolean("FlashStatus", false)
+
+        updateUI()
 
         binding.backBtn.setOnClickListener {
             startActivity(Intent(this, MainActivity::class.java))
@@ -74,6 +80,12 @@ class OverChargeActivity : AppCompatActivity() {
         binding.powerBtn.setOnClickListener {
             if (!isAlarmActive) {
                 isAlarmActive = true
+
+                // Storing alarmStatus value in shared preferences
+                val editor = getPreferences(MODE_PRIVATE).edit()
+                editor.putBoolean("AlarmStatus", isAlarmActive)
+                editor.apply()
+
                 alertDialog.show()
 
                 object : CountDownTimer(10000, 1000) {
@@ -86,12 +98,18 @@ class OverChargeActivity : AppCompatActivity() {
                             alertDialog.dismiss()
                         }
                         Toast.makeText(this@OverChargeActivity, "Battery Detection Mode Activated", Toast.LENGTH_SHORT).show()
-                        binding.powerBtn.setImageResource(R.drawable.power_off)
+                        updateUI()
                         startBatteryDetection()
                     }
                 }.start()
             } else {
                 stopBatteryDetection()
+                isAlarmActive = false
+
+                // Storing alarmStatus value in shared preferences
+                val editor = getPreferences(MODE_PRIVATE).edit()
+                editor.putBoolean("AlarmStatus", isAlarmActive)
+                editor.apply()
             }
         }
 
@@ -99,13 +117,37 @@ class OverChargeActivity : AppCompatActivity() {
             isVibrate = !isVibrate
             binding.switchBtnV.setImageResource(if (isVibrate) R.drawable.switch_on else R.drawable.switch_off)
             Toast.makeText(this, if (isVibrate) "Vibration Enabled" else "Vibration Disabled", Toast.LENGTH_SHORT).show()
+
+            // Storing vibrate status value in shared preferences
+            val editor = getPreferences(MODE_PRIVATE).edit()
+            editor.putBoolean("VibrateStatus", isVibrate)
+            editor.apply()
         }
 
         binding.switchBtnF.setOnClickListener {
             isFlash = !isFlash
             binding.switchBtnF.setImageResource(if (isFlash) R.drawable.switch_on else R.drawable.switch_off)
             Toast.makeText(this, if (isFlash) "Flash Turned on" else "Flash Turned off", Toast.LENGTH_SHORT).show()
+
+            // Storing flash status value in shared preferences
+            val editor = getPreferences(MODE_PRIVATE).edit()
+            editor.putBoolean("FlashStatus", isFlash)
+            editor.apply()
         }
+    }
+
+    private fun updateUI() {
+        if (isAlarmActive) {
+            binding.powerBtn.setImageResource(R.drawable.power_off)
+            binding.activateText.text = getString(R.string.tap_to_deactivate)
+            startBatteryDetection()
+        } else {
+            binding.powerBtn.setImageResource(R.drawable.power_on)
+            binding.activateText.text = getString(R.string.tap_to_activate)
+        }
+
+        binding.switchBtnV.setImageResource(if (isVibrate) R.drawable.switch_on else R.drawable.switch_off)
+        binding.switchBtnF.setImageResource(if (isFlash) R.drawable.switch_on else R.drawable.switch_off)
     }
 
     private fun startBatteryDetection() {
@@ -116,6 +158,16 @@ class OverChargeActivity : AppCompatActivity() {
 
     private fun triggerAlarm() {
         if (isAlarmActive) {
+
+            isAlarmActive = false
+            // Update the UI after deactivating the alarm
+            updateUI()
+
+            // Save the updated alarm status
+            val editor = getPreferences(MODE_PRIVATE).edit()
+            editor.putBoolean("AlarmStatus", isAlarmActive)
+            editor.apply()
+
             Toast.makeText(this, "Battery is fully charged! Enter PIN", Toast.LENGTH_SHORT).show()
             val alarmIntent = Intent(this, EnterPinActivity::class.java)
             alarmIntent.putExtra("IS_VIBRATE", isVibrate)
@@ -124,7 +176,6 @@ class OverChargeActivity : AppCompatActivity() {
         }
     }
 
-    @Deprecated("This method has been deprecated in favor of using the Activity Result API")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == ENTER_PIN_REQUEST_CODE && resultCode == RESULT_OK) {
@@ -135,12 +186,18 @@ class OverChargeActivity : AppCompatActivity() {
     private fun stopBatteryDetection() {
         Toast.makeText(this@OverChargeActivity, "Battery Detection Mode Deactivated", Toast.LENGTH_SHORT).show()
         binding.powerBtn.setImageResource(R.drawable.power_on)
+        binding.activateText.text = getString(R.string.tap_to_activate)
         isAlarmActive = false
 
         if (isReceiverRegistered) {
             unregisterReceiver(batteryReceiver)
             isReceiverRegistered = false
         }
+
+        // Storing alarmStatus value in shared preferences
+        val editor = getPreferences(MODE_PRIVATE).edit()
+        editor.putBoolean("AlarmStatus", isAlarmActive)
+        editor.apply()
     }
 
     override fun onDestroy() {
