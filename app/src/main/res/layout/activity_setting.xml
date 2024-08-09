@@ -21,27 +21,25 @@
         <ImageButton
             android:id="@+id/backBtn"
             style="@style/Widget.AppCompat.Button.Borderless"
-            android:layout_width="0dp"
+            android:layout_width="80dp"
             android:layout_height="wrap_content"
             android:layout_gravity="start"
-            android:layout_weight="1"
             android:contentDescription="@string/back"
-            android:padding="20dp"
+            android:padding="25dp"
             android:scaleType="fitCenter"
             app:srcCompat="@drawable/back"
             app:tint="@color/black" />
 
         <TextView
             android:id="@+id/activityName"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="4"
             android:layout_gravity="center"
-            android:gravity="center"
             android:text="@string/settings2"
             android:textColor="@color/black"
             android:textSize="20sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:layout_marginStart="80dp"/>
 
     </LinearLayout>
 
@@ -195,17 +193,37 @@
             app:srcCompat="@drawable/noti"
             app:tint="@color/black" />
 
-        <TextView
-            android:id="@+id/textView11"
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:layout_weight="3"
-            android:gravity="start"
-            android:text="@string/set_alarm_tone"
-            android:textColor="@color/black"
-            android:textSize="18sp"
-            android:textStyle="bold" />
+            android:orientation="vertical"
+            android:layout_weight="4">
+
+            <TextView
+                android:id="@+id/textView11"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:gravity="start"
+                android:text="@string/set_alarm_tone"
+                android:textColor="@color/black"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_margin="10dp"/>
+
+            <TextView
+                android:id="@+id/alarmToneName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:gravity="start"
+                android:text="@string/tone_name"
+                android:textColor="@color/black"
+                android:textSize="16sp"
+                android:layout_marginHorizontal="14dp"/>
+
+        </LinearLayout>
+
 
         <ImageButton
             android:id="@+id/go1"

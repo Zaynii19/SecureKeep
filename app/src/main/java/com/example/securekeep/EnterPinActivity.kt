@@ -3,10 +3,10 @@ package com.example.securekeep
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.graphics.Color
 import android.hardware.camera2.CameraAccessException
 import android.hardware.camera2.CameraManager
-import android.media.AudioManager
 import android.media.MediaPlayer
 import android.os.Build
 import android.os.Bundle
@@ -16,7 +16,6 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.view.View
-import android.widget.Button
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -29,15 +28,15 @@ class EnterPinActivity : AppCompatActivity() {
         ActivityEnterPinBinding.inflate(layoutInflater)
     }
     private lateinit var pinDots: Array<View>
-    private var setPin = "2222"
     private var enteredPin = ""
-
+    private var currentPin = ""
     private var isVibrate = false
     private var isFlash = false
     private var mediaPlayer: MediaPlayer? = null
     private lateinit var cameraManager: CameraManager
     private lateinit var cameraId: String
     private lateinit var handler: Handler
+    private lateinit var sharedPreferences: SharedPreferences
     private val flashRunnable = object : Runnable {
         override fun run() {
             toggleFlashlight()
@@ -55,6 +54,10 @@ class EnterPinActivity : AppCompatActivity() {
             insets
         }
 
+        // Initialize SharedPreferences
+        sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
+        currentPin = sharedPreferences.getString("USER_PIN", "") ?: ""
+
         pinDots = arrayOf(
             binding.pinDot1, binding.pinDot2, binding.pinDot3, binding.pinDot4
         )
@@ -63,7 +66,9 @@ class EnterPinActivity : AppCompatActivity() {
         cameraId = cameraManager.cameraIdList[0] // Assuming back camera
         handler = Handler(Looper.getMainLooper())
 
-        mediaPlayer = MediaPlayer.create(this, R.raw.alarm_tune_1)
+        // Retrieve the saved tone
+        val toneId = sharedPreferences.getInt("alarm_tone", R.raw.alarm_tune_1)
+        mediaPlayer = MediaPlayer.create(this, toneId)
 
         // Retrieve vibration and flashlight states from intent
         isVibrate = intent.getBooleanExtra("IS_VIBRATE", false)
@@ -128,7 +133,7 @@ class EnterPinActivity : AppCompatActivity() {
 
     private fun pinCheck() {
         if (enteredPin.length == 4) {
-            if (enteredPin == setPin) {
+            if (enteredPin == currentPin) {
                 stopAlarm()
                 val resultIntent = Intent()
                 setResult(Activity.RESULT_OK, resultIntent)
@@ -139,7 +144,6 @@ class EnterPinActivity : AppCompatActivity() {
             }
         }
     }
-
 
     private fun triggerAlarm() {
         mediaPlayer?.apply {

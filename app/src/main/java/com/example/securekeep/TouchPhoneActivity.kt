@@ -6,6 +6,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.widget.Toast
@@ -33,6 +34,7 @@ class TouchPhoneActivity : AppCompatActivity(), SensorEventListener {
     private var isMotionDetectionEnabled = false
     private var isVibrate = false
     private var isFlash = false
+    private var motionSencetivty : Float = 0.0f
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,6 +51,10 @@ class TouchPhoneActivity : AppCompatActivity(), SensorEventListener {
         isAlarmActive = preferences.getBoolean("AlarmStatus", false)
         isVibrate = preferences.getBoolean("VibrateStatus", false)
         isFlash = preferences.getBoolean("FlashStatus", false)
+
+        // Retrieve the saved motion sensitivity
+        val sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
+        motionSencetivty = sharedPreferences.getFloat("motionSensitivity", 1.0f)
 
         updateUI()
 
@@ -184,7 +190,8 @@ class TouchPhoneActivity : AppCompatActivity(), SensorEventListener {
             val delta = mAccelCurrent - mAccelLast
             mAccel = mAccel * 0.9f + delta
 
-            if (mAccel > 1.0 && !isAlarmTriggered) {
+
+            if (mAccel > motionSencetivty && !isAlarmTriggered) {
                 isAlarmActive = false
 
                 // Update the UI after deactivating the alarm

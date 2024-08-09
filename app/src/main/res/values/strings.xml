@@ -96,4 +96,15 @@
     <string name="please_connect_earphones">Please Connect Earphones</string>
     <string name="_2024_08_03_09_46_pm">2024/08/03 09:46 PM</string>
     <string name="tap_to_deactivate">Tap to Deactivate</string>
+    <string name="tone_1">Tone 1</string>
+    <string name="tone_2">Tone 2</string>
+    <string name="tone_3">Tone 3</string>
+    <string name="tone_4">Tone 4</string>
+    <string name="tone_5">Tone 5</string>
+    <string name="tone_name">Tone Name</string>
+    <string name="system_tones">System Tones</string>
+    <string name="create_4_digit_pin">Create 4 Digit Pin</string>
+    <string name="change_pin_code">Change Pin Code</string>
+    <string name="staric">****</string>
+    <string name="current_pin_code">Current Pin Code</string>
 </resources>

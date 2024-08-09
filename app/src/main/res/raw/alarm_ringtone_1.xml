@@ -1,7 +1,0 @@
-<!-- res/xml/alarm_ringtone.xml -->
-<resources xmlns:android="http://schemas.android.com/apk/res/android">
-    <ringtone
-        android:title="@string/ringtone_1"
-        android:summary="@string/bulgur_alarm"
-    android:uri="@raw/alarm_ringtone_1" />
-</resources>

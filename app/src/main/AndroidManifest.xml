@@ -11,11 +11,13 @@
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission
         android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.WRITE_MEDIA_VISUAL_USER_SELECTED" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
 
     <uses-feature android:name="android.hardware.camera.flash" />
@@ -34,6 +36,12 @@
         android:theme="@style/Theme.SecureKeep"
         tools:targetApi="31">
         <activity
+            android:name=".PinActivity"
+            android:exported="false" />
+        <activity
+            android:name=".CreatePinActivity"
+            android:exported="false" />
+        <activity
             android:name=".IntruderSelfieActivity"
             android:exported="false" />
         <activity
@@ -41,8 +49,7 @@
             android:exported="false" />
         <activity
             android:name=".EnterPinActivity"
-            android:exported="true">
-        </activity>
+            android:exported="true" />
         <activity
             android:name=".EarphonesActivity"
             android:exported="false" />
@@ -77,23 +84,30 @@
         <activity
             android:name=".MainActivity"
             android:exported="true" />
+        <service
+            android:name=".CameraService"
+            android:enabled="true"
+            android:exported="false" />
 
-        <!-- Device Admin Receiver -->
-        <service android:name=".CameraService" android:exported="false"/>
+        <service
+            android:name="com.example.securekeep.PocketService"
+            android:enabled="true"
+            android:exported="false" />
+
         <receiver
             android:name=".MyDeviceAdminReceiver"
-            android:permission="android.permission.BIND_DEVICE_ADMIN"
-            android:exported="true">
+            android:exported="true"
+            android:permission="android.permission.BIND_DEVICE_ADMIN">
             <intent-filter>
                 <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
                 <action android:name="android.app.action.DEVICE_ADMIN_DISABLED" />
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
+
             <meta-data
                 android:name="android.app.device_admin"
                 android:resource="@xml/device_admin_receiver" />
         </receiver>
-
     </application>
 
 </manifest>

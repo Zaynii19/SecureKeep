@@ -145,7 +145,7 @@ class IntruderActivity : AppCompatActivity() {
     private fun showNumberPickerDialog() {
         val builder = AlertDialog.Builder(this)
         val inflater = layoutInflater
-        val dialogView = inflater.inflate(R.layout.dialog_number_picker, null)
+        val dialogView = inflater.inflate(R.layout.dialog_attempt_picker, null)
         builder.setView(dialogView)
 
         val radioGroup = dialogView.findViewById<RadioGroup>(R.id.radioGroup)

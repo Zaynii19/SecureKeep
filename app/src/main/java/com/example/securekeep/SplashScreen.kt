@@ -20,7 +20,7 @@ class SplashScreen : AppCompatActivity() {
             insets
         }
         Handler(Looper.getMainLooper()).postDelayed({
-            startActivity(Intent(this, MainActivity :: class.java))
+            startActivity(Intent(this, CreatePinActivity :: class.java))
             finish()
         },3000) //3 sec
     }
