@@ -1,7 +1,13 @@
 package com.example.securekeep
 
+import android.content.Context
 import android.content.Intent
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.os.Bundle
+import android.os.PowerManager
 import android.os.CountDownTimer
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -11,7 +17,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.securekeep.databinding.ActivityAntiPocketBinding
 
-class AntiPocketActivity : AppCompatActivity() {
+class AntiPocketActivity : AppCompatActivity(), SensorEventListener {
 
     private val binding by lazy {
         ActivityAntiPocketBinding.inflate(layoutInflater)
@@ -22,6 +28,11 @@ class AntiPocketActivity : AppCompatActivity() {
     private var isVibrate = false
     private var isFlash = false
 
+    private lateinit var sensorManager: SensorManager
+    private lateinit var proximitySensor: Sensor
+    private lateinit var wakeLock: PowerManager.WakeLock
+    private var isWakeLockAcquired = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -31,6 +42,14 @@ class AntiPocketActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+
+        // Initialize SensorManager and Proximity Sensor
+        sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        proximitySensor = sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY)!!
+
+        // Initialize WakeLock
+        val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MyApp::AntiPocketActivityWakelock")
 
         // Retrieving selected attempts, alert status
         val preferences = getPreferences(MODE_PRIVATE)
@@ -74,13 +93,13 @@ class AntiPocketActivity : AppCompatActivity() {
                         if (alertDialog.isShowing) {
                             alertDialog.dismiss()
                         }
-                        Toast.makeText(this@AntiPocketActivity, "Proximity Detection Mode Activated", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@AntiPocketActivity, "Anti Pocket Mode Activated", Toast.LENGTH_SHORT).show()
                         updateUI()
-                        startPocketService()
+                        startProximityDetection()
                     }
                 }.start()
             } else {
-                stopPocketService()
+                stopProximityDetection()
             }
         }
 
@@ -111,7 +130,6 @@ class AntiPocketActivity : AppCompatActivity() {
         if (isAlarmActive) {
             binding.powerBtn.setImageResource(R.drawable.power_off)
             binding.activateText.text = getString(R.string.tap_to_deactivate)
-            startPocketService()
         } else {
             binding.powerBtn.setImageResource(R.drawable.power_on)
             binding.activateText.text = getString(R.string.tap_to_activate)
@@ -121,15 +139,14 @@ class AntiPocketActivity : AppCompatActivity() {
         binding.switchBtnF.setImageResource(if (isFlash) R.drawable.switch_on else R.drawable.switch_off)
     }
 
-    private fun startPocketService() {
-        val serviceIntent = Intent(this, PocketService::class.java)
-        serviceIntent.putExtra("IS_VIBRATE", isVibrate)
-        serviceIntent.putExtra("IS_FLASH", isFlash)
-        startService(serviceIntent)
+    private fun startProximityDetection() {
+        wakeLock.acquire(10 * 60 * 1000L /*10 minutes*/)
+        isWakeLockAcquired = true
+        sensorManager.registerListener(this, proximitySensor, SensorManager.SENSOR_DELAY_UI)
     }
 
-    private fun stopPocketService() {
-        Toast.makeText(this@AntiPocketActivity, "Proximity Detection Mode Deactivated", Toast.LENGTH_SHORT).show()
+    private fun stopProximityDetection() {
+        Toast.makeText(this@AntiPocketActivity, "Anti Pocket Mode Deactivated", Toast.LENGTH_SHORT).show()
         binding.powerBtn.setImageResource(R.drawable.power_on)
         binding.activateText.text = getString(R.string.tap_to_activate)
         isAlarmActive = false
@@ -139,11 +156,47 @@ class AntiPocketActivity : AppCompatActivity() {
 
         isVibrate = false
         binding.switchBtnV.setImageResource(R.drawable.switch_off)
+
         // Storing alarmStatus value in shared preferences
         val editor = getPreferences(MODE_PRIVATE).edit()
         editor.putBoolean("AlarmStatus", isAlarmActive)
         editor.apply()
 
-        stopService(Intent(this, PocketService::class.java))
+        sensorManager.unregisterListener(this)
+        if (isWakeLockAcquired) {
+            wakeLock.release()
+            isWakeLockAcquired = false
+        }
+    }
+
+    override fun onSensorChanged(event: SensorEvent) {
+        if (event.sensor.type == Sensor.TYPE_PROXIMITY && isAlarmActive) {
+            if (event.values[0] < proximitySensor.maximumRange) {
+                triggerAlarm()
+            }
+        }
+    }
+
+    private fun triggerAlarm() {
+        if (isAlarmActive) {
+
+            isAlarmActive = false
+            // Update the UI after deactivating the alarm
+            updateUI()
+
+            // Save the updated alarm status
+            val editor = getPreferences(MODE_PRIVATE).edit()
+            editor.putBoolean("AlarmStatus", isAlarmActive)
+            editor.apply()
+
+            val alarmIntent = Intent(this, EnterPinActivity::class.java)
+            alarmIntent.putExtra("IS_VIBRATE", isVibrate)
+            alarmIntent.putExtra("IS_FLASH", isFlash)
+            startActivity(alarmIntent)
+        }
+    }
+
+    override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {
+        // Do nothing
     }
 }

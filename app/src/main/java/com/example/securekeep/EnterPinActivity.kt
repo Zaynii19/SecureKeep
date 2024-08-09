@@ -23,6 +23,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.securekeep.databinding.ActivityEnterPinBinding
 
+
 class EnterPinActivity : AppCompatActivity() {
     private val binding by lazy {
         ActivityEnterPinBinding.inflate(layoutInflater)
