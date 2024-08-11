@@ -50,6 +50,12 @@ class IntruderActivity : AppCompatActivity() {
         devicePolicyManager = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
         compName = ComponentName(this, MyDeviceAdminReceiver::class.java)
 
+        // Check if the app is already a device admin
+        if (!devicePolicyManager.isAdminActive(compName)) {
+            // Request device admin permission
+            requestDeviceAdmin()
+        }
+
         // Request device admin permission if not already granted
         if (!devicePolicyManager.isAdminActive(compName)) {
             val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN)
@@ -96,6 +102,7 @@ class IntruderActivity : AppCompatActivity() {
         updatePowerButton()
 
         binding.powerBtn.setOnClickListener {
+
             if (alertStatus == "Active") {
                 stopBackgroundService()
                 alertStatus = "NotActive"
@@ -129,6 +136,29 @@ class IntruderActivity : AppCompatActivity() {
                 }
             }
             saveAlertStatus()
+        }
+    }
+
+    private fun requestDeviceAdmin() {
+        // Create an intent to request device admin
+        val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN)
+        intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, compName)
+        intent.putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, "Enable device admin for additional security features.")
+        startActivityForResult(intent, REQUEST_CODE_ENABLE_ADMIN)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_CODE_ENABLE_ADMIN) {
+            if (resultCode == RESULT_OK) {
+                // Device admin enabled
+                val failedAttempts = getWrongAttempts()
+                Toast.makeText(this, "Device admin enabled. Failed attempts: $failedAttempts", Toast.LENGTH_SHORT).show()
+            } else {
+                // Device admin not enabled
+                Toast.makeText(this, "Device admin not enabled. Please enable it to use this feature.", Toast.LENGTH_SHORT).show()
+                requestDeviceAdmin() // Request again if not enabled
+            }
         }
     }
 

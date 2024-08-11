@@ -1,6 +1,7 @@
 package com.example.securekeep
 
 import android.content.Intent
+import android.content.SharedPreferences
 import android.graphics.Color
 import android.os.Bundle
 import android.view.View
@@ -12,40 +13,21 @@ import androidx.core.view.WindowInsetsCompat
 import com.example.securekeep.databinding.ActivityCreatePinBinding
 
 class CreatePinActivity : AppCompatActivity() {
+    private lateinit var sharedPreferences: SharedPreferences
     private val binding by lazy {
         ActivityCreatePinBinding.inflate(layoutInflater)
     }
     private lateinit var pinDots: Array<View>
     private var enteredPin = ""
+    private var isChangePinMode = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        val sharedPreferences = getSharedPreferences("AppPrefs", MODE_PRIVATE)
-        val isFirstLaunch = sharedPreferences.getBoolean("IS_FIRST_LAUNCH", true)
-        val storedPin = sharedPreferences.getString("USER_PIN", null)
-
-        val isPinChanged = intent.getBooleanExtra("CHANGE_PIN", false)
-
-        // If there's already a PIN stored and it's not the first launch, navigate to MainActivity
-        if (!isFirstLaunch && storedPin != null && isPinChanged) {
-            Toast.makeText(this@CreatePinActivity, "Enter New Pin", Toast.LENGTH_SHORT).show()
-        }
-
-        // Handle first launch setup
-        if (isFirstLaunch) {
-            binding.backBtn.visibility = View.INVISIBLE
-            sharedPreferences.edit().putBoolean("IS_FIRST_LAUNCH", false).apply()
-        }
-
-        enableEdgeToEdge()
         setContentView(binding.root)
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
+        sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
+
+        isChangePinMode = intent.getBooleanExtra("CHANGE_PIN", false)
 
         binding.backBtn.setOnClickListener {
             finish()
@@ -56,6 +38,7 @@ class CreatePinActivity : AppCompatActivity() {
         )
 
         setupPinButtons()
+
     }
 
     private fun setupPinButtons() {
@@ -79,7 +62,9 @@ class CreatePinActivity : AppCompatActivity() {
                     onClearClick()
                 } else {
                     onDigitClick(value)
-                    pinCreate()
+                    if (enteredPin.length == 4) {
+                        pinCreate()
+                    }
                 }
             }
         }
@@ -106,18 +91,23 @@ class CreatePinActivity : AppCompatActivity() {
     }
 
     private fun pinCreate() {
-        if (enteredPin.length == 4) {
-            // Save the entered PIN in SharedPreferences
-            val sharedPreferences = getSharedPreferences("AppPrefs", MODE_PRIVATE)
-            val editor = sharedPreferences.edit()
-            editor.putString("USER_PIN", enteredPin)
-            editor.apply()
+        val editor = sharedPreferences.edit()
+        editor.putString("USER_PIN", enteredPin)
+        editor.apply()
 
-            Toast.makeText(this, "Pin Created Successfully", Toast.LENGTH_SHORT).show()
+        val isFirstLaunch = sharedPreferences.getBoolean("IS_FIRST_LAUNCH", true)
 
-            // Launch MainActivity and finish CreatePinActivity
+        if (isFirstLaunch) {
+            editor.putBoolean("IS_FIRST_LAUNCH", false).apply()
+            Toast.makeText(this, "PIN Created Successfully", Toast.LENGTH_SHORT).show()
+            // Start MainActivity after PIN creation on first launch
             startActivity(Intent(this, MainActivity::class.java))
+        } else {
+            Toast.makeText(this, "PIN Changed Successfully", Toast.LENGTH_SHORT).show()
+            // Finish the activity after changing PIN
             finish()
         }
     }
+
 }
+

@@ -57,7 +57,7 @@ class EnterPinActivity : AppCompatActivity() {
 
         // Initialize SharedPreferences
         sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
-        currentPin = sharedPreferences.getString("USER_PIN", "") ?: ""
+        currentPin = sharedPreferences.getString("USER_PIN", "")!!
 
         pinDots = arrayOf(
             binding.pinDot1, binding.pinDot2, binding.pinDot3, binding.pinDot4

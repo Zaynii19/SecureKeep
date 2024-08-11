@@ -28,7 +28,7 @@ class PinActivity : AppCompatActivity() {
 
         // Initialize SharedPreferences
         sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
-        val currentPin = sharedPreferences.getString("USER_PIN", "") ?: ""
+        val currentPin = sharedPreferences.getString("USER_PIN", "")
 
         binding.setPinCode.setOnClickListener {
             val intent = Intent(this, CreatePinActivity::class.java)

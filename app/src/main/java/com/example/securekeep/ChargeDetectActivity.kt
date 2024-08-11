@@ -76,7 +76,7 @@ class ChargeDetectActivity : AppCompatActivity() {
         updatePowerButtonUI()
 
         binding.backBtn.setOnClickListener {
-            startActivity(Intent(this, MainActivity::class.java))
+            finish()
         }
 
         binding.settingBtn.setOnClickListener {

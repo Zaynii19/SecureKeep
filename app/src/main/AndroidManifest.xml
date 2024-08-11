@@ -89,11 +89,6 @@
             android:enabled="true"
             android:exported="false" />
 
-        <service
-            android:name="com.example.securekeep.PocketService"
-            android:enabled="true"
-            android:exported="false" />
-
         <receiver
             android:name=".MyDeviceAdminReceiver"
             android:exported="true"

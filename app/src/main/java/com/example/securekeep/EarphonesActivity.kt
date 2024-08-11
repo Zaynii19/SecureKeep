@@ -71,7 +71,7 @@ class EarphonesActivity : AppCompatActivity() {
         checkBluetoothPermissions()
 
         binding.backBtn.setOnClickListener {
-            startActivity(Intent(this, MainActivity::class.java))
+            finish()
         }
 
         binding.settingBtn.setOnClickListener {
