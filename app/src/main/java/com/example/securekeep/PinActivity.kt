@@ -3,6 +3,7 @@ package com.example.securekeep
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -26,9 +27,13 @@ class PinActivity : AppCompatActivity() {
             insets
         }
 
+        binding.backBtn.setOnClickListener {
+            finish()
+        }
+
         // Initialize SharedPreferences
         sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
-        val currentPin = sharedPreferences.getString("USER_PIN", "")
+        val currentPin = sharedPreferences.getString("USER_PIN", null)
 
         binding.setPinCode.setOnClickListener {
             val intent = Intent(this, CreatePinActivity::class.java)

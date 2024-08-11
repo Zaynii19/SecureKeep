@@ -4,6 +4,7 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Color
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -38,7 +39,6 @@ class CreatePinActivity : AppCompatActivity() {
         )
 
         setupPinButtons()
-
     }
 
     private fun setupPinButtons() {
@@ -92,22 +92,23 @@ class CreatePinActivity : AppCompatActivity() {
 
     private fun pinCreate() {
         val editor = sharedPreferences.edit()
-        editor.putString("USER_PIN", enteredPin)
-        editor.apply()
 
-        val isFirstLaunch = sharedPreferences.getBoolean("IS_FIRST_LAUNCH", true)
+        if (isChangePinMode || sharedPreferences.getBoolean("IS_FIRST_LAUNCH", true)) {
+            editor.putString("USER_PIN", enteredPin)
+            editor.putBoolean("IS_FIRST_LAUNCH", false)
+            editor.apply()
 
-        if (isFirstLaunch) {
-            editor.putBoolean("IS_FIRST_LAUNCH", false).apply()
-            Toast.makeText(this, "PIN Created Successfully", Toast.LENGTH_SHORT).show()
-            // Start MainActivity after PIN creation on first launch
-            startActivity(Intent(this, MainActivity::class.java))
-        } else {
-            Toast.makeText(this, "PIN Changed Successfully", Toast.LENGTH_SHORT).show()
-            // Finish the activity after changing PIN
-            finish()
+            if (isChangePinMode) {
+                Toast.makeText(this, "PIN Changed Successfully", Toast.LENGTH_SHORT).show()
+                finish()
+            } else {
+                Toast.makeText(this, "PIN Created Successfully", Toast.LENGTH_SHORT).show()
+                startActivity(Intent(this, MainActivity::class.java))
+                finish()
+            }
         }
     }
-
 }
+
+
 
