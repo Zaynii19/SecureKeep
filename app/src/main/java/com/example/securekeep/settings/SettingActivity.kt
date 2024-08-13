@@ -1,4 +1,4 @@
-package com.example.securekeep
+package com.example.securekeep.settings
 
 import android.content.Context
 import android.content.Intent
@@ -7,9 +7,6 @@ import android.media.AudioManager
 import android.media.MediaPlayer
 import android.os.Bundle
 import android.widget.Button
-import android.widget.LinearLayout
-import android.widget.RadioButton
-import android.widget.RadioGroup
 import android.widget.SeekBar
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -18,6 +15,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.example.securekeep.R
 import com.example.securekeep.databinding.ActivitySettingBinding
 
 class SettingActivity : AppCompatActivity() {
@@ -59,6 +57,7 @@ class SettingActivity : AppCompatActivity() {
 
         // Retrieve tone from shared preferences
         toneId = sharedPreferences.getInt("alarm_tone", R.raw.alarm_tune_1)
+
         binding.alarmToneName.text = when (toneId) {
             R.raw.alarm_tune_1 -> "Tone 1"
             R.raw.alarm_tune_1 -> "Tone 2"
@@ -89,11 +88,11 @@ class SettingActivity : AppCompatActivity() {
 
         // Initialize motion sensitivity SeekBar
         binding.seekBarMotion.max = 100
-        binding.seekBarMotion.progress = (sensitivityThreshold / 2.0f * 100).toInt() // Convert to SeekBar progress
+        binding.seekBarMotion.progress = (sensitivityThreshold / 30.0f * 100).toInt() // Convert to SeekBar progress
 
         binding.seekBarMotion.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                sensitivityThreshold = progress / 100f * 2.0f
+                sensitivityThreshold = progress / 100f * 30.0f
 
                 // Store motion sensitivity threshold in shared preferences
                 val editor = sharedPreferences.edit()

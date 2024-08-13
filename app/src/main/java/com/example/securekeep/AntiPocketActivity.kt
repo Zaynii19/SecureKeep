@@ -15,7 +15,9 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.example.securekeep.alarmsetup.EnterPinActivity
 import com.example.securekeep.databinding.ActivityAntiPocketBinding
+import com.example.securekeep.settings.SettingActivity
 
 class AntiPocketActivity : AppCompatActivity(), SensorEventListener {
 

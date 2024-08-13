@@ -13,6 +13,9 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
     <!-- Scoped Storage Permissions -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"
@@ -27,6 +30,10 @@
     <!-- Foreground Service Permissions for API 34+ -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA"
         android:required="false" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+
+
 
     <!-- Camera Features -->
     <uses-feature android:name="android.hardware.camera.flash" />
@@ -34,6 +41,7 @@
 
 
     <application
+        android:name=".alarmsetup.ApplicationClass"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -44,17 +52,17 @@
         android:theme="@style/Theme.SecureKeep">
 
         <!-- Activities -->
-        <activity android:name=".PinActivity" android:exported="false" />
-        <activity android:name=".CreatePinActivity" android:exported="false" />
-        <activity android:name=".IntruderSelfieActivity" android:exported="false" />
-        <activity android:name=".SettingActivity" android:exported="false" />
-        <activity android:name=".EnterPinActivity" android:exported="true" />
+        <activity android:name=".settings.PinActivity" android:exported="false" />
+        <activity android:name=".settings.CreatePinActivity" android:exported="false" />
+        <activity android:name=".intruderdetection.IntruderSelfieActivity" android:exported="false" />
+        <activity android:name=".settings.SettingActivity" android:exported="false" />
+        <activity android:name=".alarmsetup.EnterPinActivity" android:exported="true" />
         <activity android:name=".EarphonesActivity" android:exported="false" />
         <activity android:name=".OverChargeActivity" android:exported="false" />
         <activity android:name=".WifiActivity" android:exported="false" />
         <activity android:name=".ChargeDetectActivity" android:exported="false" />
         <activity android:name=".AntiPocketActivity" android:exported="false" android:theme="@style/Theme.SecureKeep" />
-        <activity android:name=".TouchPhoneActivity" android:exported="false" />
+        <activity android:name=".touchdetection.TouchPhoneActivity" android:exported="false" />
         <activity android:name=".intruderdetection.IntruderActivity" android:exported="false" />
         <activity android:name=".SplashScreen" android:exported="true">
             <intent-filter>
@@ -82,5 +90,16 @@
                 <action android:name="android.app.action.DEVICE_ADMIN_DISABLE_REQUESTED"/>
             </intent-filter>
         </receiver>
+
+        <service
+            android:name=".touchdetection.MotionDetectionService"
+            android:exported="false"
+            android:foregroundServiceType="location" />
+
+        <service
+            android:name=".alarmsetup.AlarmService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
+
     </application>
 </manifest>

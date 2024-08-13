@@ -1,40 +1,35 @@
-package com.example.securekeep
+package com.example.securekeep.touchdetection
 
-import android.content.Context
 import android.content.Intent
-import android.hardware.Sensor
-import android.hardware.SensorEvent
-import android.hardware.SensorEventListener
-import android.hardware.SensorManager
-import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.securekeep.databinding.ActivityTouchPhoneBinding
+import android.Manifest
+import android.content.SharedPreferences
+import android.content.pm.PackageManager
+import androidx.core.app.ActivityCompat
+import com.example.securekeep.R
+import com.example.securekeep.settings.SettingActivity
+import com.example.securekeep.alarmsetup.EnterPinActivity
 
-class TouchPhoneActivity : AppCompatActivity(), SensorEventListener {
+class TouchPhoneActivity : AppCompatActivity() {
 
     private val binding by lazy {
         ActivityTouchPhoneBinding.inflate(layoutInflater)
     }
 
-    private lateinit var sensorManager: SensorManager
-    private lateinit var accelerometer: Sensor
-    private var mAccel: Float = 0.0f
-    private var mAccelCurrent: Float = 0.0f
-    private var mAccelLast: Float = 0.0f
     private lateinit var alertDialog: AlertDialog
     private var isAlarmActive = false
-    private var isAlarmTriggered = false
-    private var isMotionDetectionEnabled = false
     private var isVibrate = false
     private var isFlash = false
-    private var motionSencetivty : Float = 0.0f
+    private lateinit var sharedPreferences: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,15 +41,16 @@ class TouchPhoneActivity : AppCompatActivity(), SensorEventListener {
             insets
         }
 
-        // Retrieving saved states
-        val preferences = getPreferences(MODE_PRIVATE)
-        isAlarmActive = preferences.getBoolean("AlarmStatus", false)
-        isVibrate = preferences.getBoolean("VibrateStatus", false)
-        isFlash = preferences.getBoolean("FlashStatus", false)
+        requestLocationPermissions()
 
-        // Retrieve the saved motion sensitivity
-        val sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
-        motionSencetivty = sharedPreferences.getFloat("motionSensitivity", 1.0f)
+        // Initialize SharedPreferences
+        sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
+        // Retrieving saved states
+        isAlarmActive = sharedPreferences.getBoolean("AlarmStatus", false)
+        isVibrate = sharedPreferences.getBoolean("VibrateStatus", false)
+        isFlash = sharedPreferences.getBoolean("FlashStatus", false)
+
+
 
         updateUI()
 
@@ -65,10 +61,6 @@ class TouchPhoneActivity : AppCompatActivity(), SensorEventListener {
         binding.settingBtn.setOnClickListener {
             startActivity(Intent(this, SettingActivity::class.java))
         }
-
-        // Initialize sensor manager and accelerometer
-        sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)!!
 
         alertDialog = AlertDialog.Builder(this)
             .setTitle("Will Be Activated In 10 Seconds")
@@ -98,7 +90,7 @@ class TouchPhoneActivity : AppCompatActivity(), SensorEventListener {
                         }
                         Toast.makeText(this@TouchPhoneActivity, "Motion Detection Mode Activated", Toast.LENGTH_SHORT).show()
                         updateUI()
-                        isMotionDetectionEnabled = true
+                        startMotionDetectionService()
                     }
                 }.start()
             } else {
@@ -112,8 +104,8 @@ class TouchPhoneActivity : AppCompatActivity(), SensorEventListener {
             Toast.makeText(this, if (isVibrate) "Vibration Enabled" else "Vibration Disabled", Toast.LENGTH_SHORT).show()
 
             // Storing vibrate status value in shared preferences
-            val editor = getPreferences(MODE_PRIVATE).edit()
-            editor.putBoolean("VibrateStatus", isVibrate)
+            val editor = sharedPreferences.edit()
+            editor.putBoolean("VibrateStatus", isFlash)
             editor.apply()
         }
 
@@ -123,21 +115,16 @@ class TouchPhoneActivity : AppCompatActivity(), SensorEventListener {
             Toast.makeText(this, if (isFlash) "Flash Turned on" else "Flash Turned off", Toast.LENGTH_SHORT).show()
 
             // Storing flash status value in shared preferences
-            val editor = getPreferences(MODE_PRIVATE).edit()
+            val editor = sharedPreferences.edit()
             editor.putBoolean("FlashStatus", isFlash)
             editor.apply()
         }
-
-        mAccel = 0.0f
-        mAccelCurrent = SensorManager.GRAVITY_EARTH
-        mAccelLast = SensorManager.GRAVITY_EARTH
     }
 
     private fun updateUI() {
         if (isAlarmActive) {
             binding.powerBtn.setImageResource(R.drawable.power_off)
             binding.activateText.text = getString(R.string.tap_to_deactivate)
-            isMotionDetectionEnabled = true
         } else {
             binding.powerBtn.setImageResource(R.drawable.power_on)
             binding.activateText.text = getString(R.string.tap_to_activate)
@@ -147,71 +134,63 @@ class TouchPhoneActivity : AppCompatActivity(), SensorEventListener {
         binding.switchBtnF.setImageResource(if (isFlash) R.drawable.switch_on else R.drawable.switch_off)
     }
 
+    override fun onResume() {
+        super.onResume()
+        // Check if the alarm is active when the activity resumes
+        if (isAlarmActive) {
+            // Start EnterPinActivity if the alarm is active
+            startActivity(Intent(this, EnterPinActivity::class.java))
+            finish() // Optionally finish this activity if you want to prevent the user from returning to it
+        }
+    }
+
+
     private fun deactivateMotionDetection() {
         Toast.makeText(this@TouchPhoneActivity, "Motion Detection Mode Deactivated", Toast.LENGTH_SHORT).show()
         binding.powerBtn.setImageResource(R.drawable.power_on)
         binding.activateText.text = getString(R.string.tap_to_activate)
-        isMotionDetectionEnabled = false
         isAlarmActive = false
-        isAlarmTriggered = false
-
-        isFlash = false
-        binding.switchBtnF.setImageResource(R.drawable.switch_off)
-
-        isVibrate = false
-        binding.switchBtnV.setImageResource(R.drawable.switch_off)
-
         updateUI()
 
         // Storing alarm status value in shared preferences
         val editor = getPreferences(MODE_PRIVATE).edit()
         editor.putBoolean("AlarmStatus", isAlarmActive)
         editor.apply()
+
+        stopMotionDetectionService()
     }
 
-    override fun onResume() {
-        super.onResume()
-        sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI)
+    private fun startMotionDetectionService() {
+        val serviceIntent = Intent(this, MotionDetectionService::class.java)
+        ContextCompat.startForegroundService(this, serviceIntent)
     }
 
-    override fun onPause() {
-        super.onPause()
-        sensorManager.unregisterListener(this)
+    private fun stopMotionDetectionService() {
+        val serviceIntent = Intent(this, MotionDetectionService::class.java)
+        stopService(serviceIntent)
     }
 
-    override fun onSensorChanged(event: SensorEvent) {
-        if (isMotionDetectionEnabled && event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
-            val values = event.values
-            val x = values[0]
-            val y = values[1]
-            val z = values[2]
-            mAccelLast = mAccelCurrent
-            mAccelCurrent = Math.sqrt((x * x + y * y + z * z).toDouble()).toFloat()
-            val delta = mAccelCurrent - mAccelLast
-            mAccel = mAccel * 0.9f + delta
+    private fun requestLocationPermissions() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
+            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+            ActivityCompat.requestPermissions(this, arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ), 101)
+        }
+    }
 
 
-            if (mAccel > motionSencetivty && !isAlarmTriggered) {
-                isAlarmActive = false
-
-                // Update the UI after deactivating the alarm
-                updateUI()
-
-                // Save the updated alarm status
-                val editor = getPreferences(MODE_PRIVATE).edit()
-                editor.putBoolean("AlarmStatus", isAlarmActive)
-                editor.apply()
-
-                isAlarmTriggered = true
-                val intent = Intent(this, EnterPinActivity::class.java)
-                intent.putExtra("IS_VIBRATE", isVibrate)
-                intent.putExtra("IS_FLASH", isFlash)
-                startActivity(intent)
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 101) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this@TouchPhoneActivity, "Location Permission Granted", Toast.LENGTH_SHORT).show()
+            } else {
+                requestLocationPermissions()
             }
         }
     }
 
-    override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {
-        // Do nothing
-    }
 }

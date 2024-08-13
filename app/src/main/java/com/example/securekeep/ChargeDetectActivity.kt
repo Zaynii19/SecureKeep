@@ -13,7 +13,9 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.example.securekeep.alarmsetup.EnterPinActivity
 import com.example.securekeep.databinding.ActivityChargeDetectBinding
+import com.example.securekeep.settings.SettingActivity
 
 class ChargeDetectActivity : AppCompatActivity() {
     private val binding by lazy {

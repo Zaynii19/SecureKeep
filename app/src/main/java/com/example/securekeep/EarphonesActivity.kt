@@ -19,7 +19,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.example.securekeep.alarmsetup.EnterPinActivity
 import com.example.securekeep.databinding.ActivityEarphonesBinding
+import com.example.securekeep.settings.SettingActivity
 
 class EarphonesActivity : AppCompatActivity() {
     private val binding by lazy {

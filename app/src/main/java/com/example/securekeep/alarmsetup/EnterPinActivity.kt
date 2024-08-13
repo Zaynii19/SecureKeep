@@ -1,4 +1,4 @@
-package com.example.securekeep
+package com.example.securekeep.alarmsetup
 
 import android.app.Activity
 import android.content.Context
@@ -20,12 +20,15 @@ import android.view.View
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.example.securekeep.MainActivity
+import com.example.securekeep.R
 import com.example.securekeep.databinding.ActivityEnterPinBinding
 
-
 class EnterPinActivity : AppCompatActivity() {
+
     private val binding by lazy {
         ActivityEnterPinBinding.inflate(layoutInflater)
     }
@@ -34,12 +37,14 @@ class EnterPinActivity : AppCompatActivity() {
     private var currentPin = ""
     private var isVibrate = false
     private var isFlash = false
+    private var isAlarmServiceActive = false
     private var mediaPlayer: MediaPlayer? = null
     private lateinit var cameraManager: CameraManager
     private lateinit var cameraId: String
     private lateinit var handler: Handler
     private lateinit var audioManager: AudioManager
     private lateinit var sharedPreferences: SharedPreferences
+
     private val flashRunnable = object : Runnable {
         override fun run() {
             toggleFlashlight()
@@ -58,10 +63,17 @@ class EnterPinActivity : AppCompatActivity() {
         }
 
         audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        cameraId = cameraManager.cameraIdList[0] // Assuming back camera
+        handler = Handler(Looper.getMainLooper())
+
 
         // Initialize SharedPreferences
         sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
         currentPin = sharedPreferences.getString("USER_PIN", "")!!
+        isVibrate = sharedPreferences.getBoolean("VibrateStatus", false)
+        isFlash = sharedPreferences.getBoolean("FlashStatus", false)
+        isAlarmServiceActive = sharedPreferences.getBoolean("AlarmServiceStatus",false)
         // Retrieve sound level from shared preferences
         val currentSoundLevel = sharedPreferences.getInt("SOUND_LEVEL", 50)
         setSystemSoundLevel(currentSoundLevel)
@@ -70,17 +82,13 @@ class EnterPinActivity : AppCompatActivity() {
             binding.pinDot1, binding.pinDot2, binding.pinDot3, binding.pinDot4
         )
 
-        cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
-        cameraId = cameraManager.cameraIdList[0] // Assuming back camera
-        handler = Handler(Looper.getMainLooper())
-
         // Retrieve the saved tone
         val toneId = sharedPreferences.getInt("alarm_tone", R.raw.alarm_tune_1)
         mediaPlayer = MediaPlayer.create(this, toneId)
 
-        // Retrieve vibration and flashlight states from intent
-        isVibrate = intent.getBooleanExtra("IS_VIBRATE", false)
-        isFlash = intent.getBooleanExtra("IS_FLASH", false)
+        if (isAlarmServiceActive) {
+            stopAlarmService()
+        }
 
         // Activate alarm
         triggerAlarm()
@@ -172,6 +180,11 @@ class EnterPinActivity : AppCompatActivity() {
     }
 
     private fun stopAlarm() {
+        isAlarmServiceActive = false
+        val editor = sharedPreferences.edit()
+        editor.putBoolean("AlarmServiceStatus", isAlarmServiceActive)
+        editor.apply()
+
         mediaPlayer?.apply {
             if (isPlaying) {
                 stop()
@@ -241,5 +254,20 @@ class EnterPinActivity : AppCompatActivity() {
         val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
         val volume = (clampedLevel * maxVolume) / 100
         audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volume, 0) // Remove FLAG_SHOW_UI
+    }
+
+    /*override fun onDestroy() {
+        super.onDestroy()
+        startAlarmService()
+    }*/
+
+    private fun startAlarmService() {
+        val serviceIntent = Intent(this, AlarmService::class.java)
+        ContextCompat.startForegroundService(this, serviceIntent)
+    }
+
+    private fun stopAlarmService() {
+        val serviceIntent = Intent(this, AlarmService::class.java)
+        stopService(serviceIntent)
     }
 }

@@ -5,7 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".EnterPinActivity"
+    tools:context=".alarmsetup.EnterPinActivity"
     android:background="#DEE4DE">
 
     <ImageButton
@@ -17,6 +17,7 @@
         android:contentDescription="@string/back"
         android:padding="25dp"
         android:scaleType="fitCenter"
+        android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
