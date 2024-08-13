@@ -1,13 +1,17 @@
-package com.example.securekeep
+package com.example.securekeep.intruderdetection
 
 import android.Manifest
 import android.app.ActivityManager
 import android.app.admin.DevicePolicyManager
+import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.util.Log
@@ -15,12 +19,15 @@ import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.example.securekeep.MainActivity
+import com.example.securekeep.R
 import com.example.securekeep.databinding.ActivityIntruderBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
@@ -36,7 +43,16 @@ class IntruderActivity : AppCompatActivity() {
     private lateinit var devicePolicyManager: DevicePolicyManager
     private lateinit var compName: ComponentName
     private var currentFailedAttempts = 0
+    private lateinit var sharedPreferences: SharedPreferences
+    private val passwordAttemptReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action == "PASSWORD_ATTEMPT_FAILED") {
+                onWrongPinAttempt()
+            }
+        }
+    }
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -49,6 +65,12 @@ class IntruderActivity : AppCompatActivity() {
 
         devicePolicyManager = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
         compName = ComponentName(this, MyDeviceAdminReceiver::class.java)
+
+        sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
+
+        // Register the BroadcastReceiver
+        val filter = IntentFilter("PASSWORD_ATTEMPT_FAILED")
+        registerReceiver(passwordAttemptReceiver, filter, RECEIVER_EXPORTED)
 
         // Check if the app is already a device admin
         if (!devicePolicyManager.isAdminActive(compName)) {
@@ -64,14 +86,15 @@ class IntruderActivity : AppCompatActivity() {
             startActivityForResult(intent, REQUEST_CODE_ENABLE_ADMIN)
         }
 
+        // Request camera and storage permissions
+        requestPermissions()
+
         cameraServiceRunning = isCameraServiceRunning()
 
         // Retrieving selected attempts, alert status
-        val editor = getPreferences(MODE_PRIVATE)
-        binding.selectedAttempts.text = editor.getString("selectedAttempts", "2")
-        val selectedValue = editor.getString("selectedValue", "2")
-        attemptThreshold = selectedValue!!.toInt()
-        alertStatus = editor.getString("AlertStatus", "NotActive")!!
+        attemptThreshold = sharedPreferences.getInt("AttemptThreshold", 2)
+        binding.selectedAttempts.text = sharedPreferences.getInt("AttemptThreshold", 2).toString()
+        alertStatus = sharedPreferences.getString("AlertStatus", "NotActive").toString()
 
         binding.backBtn.setOnClickListener {
             startActivity(Intent(this, MainActivity::class.java))
@@ -102,7 +125,6 @@ class IntruderActivity : AppCompatActivity() {
         updatePowerButton()
 
         binding.powerBtn.setOnClickListener {
-
             if (alertStatus == "Active") {
                 stopBackgroundService()
                 alertStatus = "NotActive"
@@ -152,8 +174,7 @@ class IntruderActivity : AppCompatActivity() {
         if (requestCode == REQUEST_CODE_ENABLE_ADMIN) {
             if (resultCode == RESULT_OK) {
                 // Device admin enabled
-                val failedAttempts = getWrongAttempts()
-                Toast.makeText(this, "Device admin enabled. Failed attempts: $failedAttempts", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Device admin enabled.", Toast.LENGTH_SHORT).show()
             } else {
                 // Device admin not enabled
                 Toast.makeText(this, "Device admin not enabled. Please enable it to use this feature.", Toast.LENGTH_SHORT).show()
@@ -164,7 +185,7 @@ class IntruderActivity : AppCompatActivity() {
 
     private fun updatePowerButton() {
         if (alertStatus == "Active") {
-            binding.powerBtn.setImageResource(R.drawable.switch_off)
+            binding.powerBtn.setImageResource(R.drawable.power_off)
             binding.activateText.text = getString(R.string.tap_to_deactivate)
         } else {
             binding.powerBtn.setImageResource(R.drawable.power_on)
@@ -187,9 +208,9 @@ class IntruderActivity : AppCompatActivity() {
             binding.selectedAttempts.text = selectedValue
             attemptThreshold = selectedValue.toInt()
 
-            // Storing attempt value in shared preferences
-            val editor = getPreferences(MODE_PRIVATE).edit()
-            editor.putString("selectedAttempts", selectedValue)
+            // Storing attempt threshold value in shared preferences
+            val editor = sharedPreferences.edit()
+            editor.putInt("AttemptThreshold", attemptThreshold)
             editor.apply()
 
             dialog.dismiss()
@@ -200,10 +221,10 @@ class IntruderActivity : AppCompatActivity() {
 
     private fun startBackgroundService() {
         if (!checkPermission()) {
-            requestPermission()
+            requestPermissions()
         } else {
             Intent(this, CameraService::class.java).also {
-                startService(it)
+                ContextCompat.startForegroundService(this, it)
                 cameraServiceRunning = true
             }
         }
@@ -218,20 +239,115 @@ class IntruderActivity : AppCompatActivity() {
 
     private fun checkPermission(): Boolean {
         val cameraPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-        val storagePermission = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-        return cameraPermission == PackageManager.PERMISSION_GRANTED && storagePermission == PackageManager.PERMISSION_GRANTED
+
+        //val writeStoragePermission = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+
+        val readStoragePermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES)
+        } else {
+            ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
+        }
+
+        val foregroundPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            ContextCompat.checkSelfPermission(this, Manifest.permission.FOREGROUND_SERVICE)
+        } else {
+            PackageManager.PERMISSION_GRANTED
+        }
+
+
+
+        /*val foregroundPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            ContextCompat.checkSelfPermission(this, Manifest.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION)
+        } else {
+            PackageManager.PERMISSION_GRANTED
+        }*/
+
+        return cameraPermission == PackageManager.PERMISSION_GRANTED &&
+                //writeStoragePermission == PackageManager.PERMISSION_GRANTED &&
+                readStoragePermission == PackageManager.PERMISSION_GRANTED &&
+                foregroundPermission == PackageManager.PERMISSION_GRANTED
     }
 
-    private fun requestPermission() {
-        ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE), 101)
-    }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == 101 && grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
+
+
+    private fun requestPermissions() {
+        val permissions = mutableListOf<String>()
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            permissions.add(Manifest.permission.CAMERA)
+        }
+
+        /* if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+             permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+         }*/
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
+                permissions.add(Manifest.permission.READ_MEDIA_IMAGES)
+            }
+        } else {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+            }
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.FOREGROUND_SERVICE) != PackageManager.PERMISSION_GRANTED) {
+                permissions.add(Manifest.permission.FOREGROUND_SERVICE)
+            }
+        }
+
+        if (permissions.isNotEmpty()) {
+            ActivityCompat.requestPermissions(this, permissions.toTypedArray(), 101)
+        } else {
             startBackgroundService()
         }
     }
+
+
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        if (requestCode == 101) {
+            // Check if all requested permissions are granted
+            if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
+                startBackgroundService()
+            } else {
+                // Determine which permissions were not granted
+                val deniedPermissions = permissions.filterIndexed { index, _ -> grantResults[index] != PackageManager.PERMISSION_GRANTED }
+
+                // Provide user feedback based on which permissions are denied
+                /*if (deniedPermissions.contains(Manifest.permission.CAMERA) ||
+                    deniedPermissions.contains(Manifest.permission.WRITE_EXTERNAL_STORAGE) ||
+                    deniedPermissions.contains(Manifest.permission.READ_EXTERNAL_STORAGE) ||
+                    deniedPermissions.contains(Manifest.permission.READ_MEDIA_IMAGES) ||
+                    deniedPermissions.contains(Manifest.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION)) {
+
+                    Toast.makeText(this, "Camera and Storage permissions are required to capture selfies.", Toast.LENGTH_SHORT).show()
+                }*/
+
+                // Define a map for the denied permissions and their corresponding messages
+                val permissionMessages = mapOf(
+                    Manifest.permission.CAMERA to "Camera permission is required to capture selfies.",
+                    // Manifest.permission.WRITE_EXTERNAL_STORAGE to "Write External Storage permission is required to save selfies.",
+                    Manifest.permission.READ_EXTERNAL_STORAGE to "Read External Storage permission is required to access saved selfies.",
+                    Manifest.permission.READ_MEDIA_IMAGES to "Read Media Images permission is required to access image files.",
+                    Manifest.permission.FOREGROUND_SERVICE to "Foreground Service Media Projection permission is required to use camera features in the foreground."
+                )
+
+                // Iterate through denied permissions and show the corresponding toast messages
+                for (permission in deniedPermissions) {
+                    permissionMessages[permission]?.let { message ->
+                        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+    }
+
+
 
     private fun isCameraServiceRunning(): Boolean {
         val manager = getSystemService(ACTIVITY_SERVICE) as ActivityManager
@@ -239,7 +355,7 @@ class IntruderActivity : AppCompatActivity() {
     }
 
     private fun onWrongPinAttempt() {
-        currentFailedAttempts = getWrongAttempts()
+        currentFailedAttempts++
         Log.d("IntruderActivity", "Wrong PIN attempt detected. Failed attempts: $currentFailedAttempts")
         if (currentFailedAttempts >= attemptThreshold) {
             Log.d("IntruderActivity", "Threshold met, starting CameraService.")
@@ -247,21 +363,19 @@ class IntruderActivity : AppCompatActivity() {
         }
     }
 
-    private fun getWrongAttempts(): Int {
-        val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
-        val failedAttempts = dpm.currentFailedPasswordAttempts
-        Log.d("IntruderActivity", "Retrieved failed attempts: $failedAttempts")
-        return failedAttempts
-    }
-
 
     private fun saveAlertStatus() {
-        val editor = getPreferences(MODE_PRIVATE).edit()
+        val editor = sharedPreferences.edit()
         editor.putString("AlertStatus", alertStatus)
         editor.apply()
     }
 
     companion object {
         private const val REQUEST_CODE_ENABLE_ADMIN = 1
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        unregisterReceiver(passwordAttemptReceiver)
     }
 }

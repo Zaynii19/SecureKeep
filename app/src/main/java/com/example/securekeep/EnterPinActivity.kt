@@ -7,6 +7,7 @@ import android.content.SharedPreferences
 import android.graphics.Color
 import android.hardware.camera2.CameraAccessException
 import android.hardware.camera2.CameraManager
+import android.media.AudioManager
 import android.media.MediaPlayer
 import android.os.Build
 import android.os.Bundle
@@ -37,6 +38,7 @@ class EnterPinActivity : AppCompatActivity() {
     private lateinit var cameraManager: CameraManager
     private lateinit var cameraId: String
     private lateinit var handler: Handler
+    private lateinit var audioManager: AudioManager
     private lateinit var sharedPreferences: SharedPreferences
     private val flashRunnable = object : Runnable {
         override fun run() {
@@ -55,9 +57,14 @@ class EnterPinActivity : AppCompatActivity() {
             insets
         }
 
+        audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
         // Initialize SharedPreferences
         sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
         currentPin = sharedPreferences.getString("USER_PIN", "")!!
+        // Retrieve sound level from shared preferences
+        val currentSoundLevel = sharedPreferences.getInt("SOUND_LEVEL", 50)
+        setSystemSoundLevel(currentSoundLevel)
 
         pinDots = arrayOf(
             binding.pinDot1, binding.pinDot2, binding.pinDot3, binding.pinDot4
@@ -217,5 +224,22 @@ class EnterPinActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         mediaPlayer?.release() // Release MediaPlayer resources
+    }
+
+    override fun onBackPressed() {
+        if (enteredPin == currentPin) {
+            super.onBackPressed()
+            // Do nothing here to prevent default back button behavior
+        } else {
+            Toast.makeText(this, "PIN required to exit!", Toast.LENGTH_SHORT).show()
+            // Handle the case where the condition is not met
+        }
+    }
+
+    private fun setSystemSoundLevel(level: Int) {
+        val clampedLevel = level.coerceIn(0, 100)
+        val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+        val volume = (clampedLevel * maxVolume) / 100
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volume, 0) // Remove FLAG_SHOW_UI
     }
 }

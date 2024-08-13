@@ -74,7 +74,7 @@ class SettingActivity : AppCompatActivity() {
 
         binding.seekBarSound.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                setSoundLevel(progress)
+                setSystemSoundLevel(progress)
                 currentSoundLevel = progress
 
                 // Store sound level in shared preferences
@@ -117,13 +117,7 @@ class SettingActivity : AppCompatActivity() {
         val clampedLevel = level.coerceIn(0, 100)
         val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
         val volume = (clampedLevel * maxVolume) / 100
-        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volume, AudioManager.FLAG_SHOW_UI)
-    }
-
-    private fun setSoundLevel(level: Int) {
-        val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
-        val volume = (level * maxVolume) / 100
-        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volume, AudioManager.FLAG_SHOW_UI)
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volume, 0) // Remove FLAG_SHOW_UI
     }
 
     private fun showTonePickerDialog() {
@@ -197,6 +191,10 @@ class SettingActivity : AppCompatActivity() {
         }
 
         dialog.show()
+
+        dialog.setOnDismissListener {
+            mediaPlayer?.stop()
+        }
     }
 
     private fun playTone(toneId: Int) {
