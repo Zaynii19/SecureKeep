@@ -49,11 +49,11 @@ class SettingActivity : AppCompatActivity() {
         }
 
         // Retrieve sound level from shared preferences
-        currentSoundLevel = sharedPreferences.getInt("SOUND_LEVEL", 50)
+        currentSoundLevel = sharedPreferences.getInt("SOUND_LEVEL", 70)
         setSystemSoundLevel(currentSoundLevel)
 
         // Retrieve motion sensitivity level from shared preferences
-        sensitivityThreshold = sharedPreferences.getFloat("motionSensitivity", 1.0f)
+        sensitivityThreshold = sharedPreferences.getFloat("motionSensitivity", 15.0f)
 
         // Retrieve tone from shared preferences
         toneId = sharedPreferences.getInt("alarm_tone", R.raw.alarm_tune_1)

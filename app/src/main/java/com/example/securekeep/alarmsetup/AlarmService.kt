@@ -44,7 +44,7 @@ class AlarmService : Service() {
         sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
         isFlash = sharedPreferences.getBoolean("FlashStatus", false)
         isVibrate = sharedPreferences.getBoolean("VibrateStatus", false)
-        val currentSoundLevel = sharedPreferences.getInt("SOUND_LEVEL", 50)
+        val currentSoundLevel = sharedPreferences.getInt("SOUND_LEVEL", 70)
 
         cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
         cameraId = cameraManager.cameraIdList.firstOrNull() ?: return // Check for null

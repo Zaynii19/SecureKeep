@@ -150,11 +150,20 @@ class TouchPhoneActivity : AppCompatActivity() {
         binding.powerBtn.setImageResource(R.drawable.power_on)
         binding.activateText.text = getString(R.string.tap_to_activate)
         isAlarmActive = false
+
+        isFlash = false
+        binding.switchBtnF.setImageResource(R.drawable.switch_off)
+
+        isVibrate = false
+        binding.switchBtnV.setImageResource(R.drawable.switch_off)
+
         updateUI()
 
         // Storing alarm status value in shared preferences
         val editor = getPreferences(MODE_PRIVATE).edit()
         editor.putBoolean("AlarmStatus", isAlarmActive)
+        editor.putBoolean("FlashStatus", isFlash)
+        editor.putBoolean("VibrateStatus", isVibrate)
         editor.apply()
 
         stopMotionDetectionService()

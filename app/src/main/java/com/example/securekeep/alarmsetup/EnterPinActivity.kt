@@ -1,6 +1,7 @@
 package com.example.securekeep.alarmsetup
 
 import android.app.Activity
+import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
@@ -13,6 +14,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
@@ -75,7 +77,7 @@ class EnterPinActivity : AppCompatActivity() {
         isFlash = sharedPreferences.getBoolean("FlashStatus", false)
         isAlarmServiceActive = sharedPreferences.getBoolean("AlarmServiceStatus",false)
         // Retrieve sound level from shared preferences
-        val currentSoundLevel = sharedPreferences.getInt("SOUND_LEVEL", 50)
+        val currentSoundLevel = sharedPreferences.getInt("SOUND_LEVEL", 70)
         setSystemSoundLevel(currentSoundLevel)
 
         pinDots = arrayOf(
@@ -150,7 +152,15 @@ class EnterPinActivity : AppCompatActivity() {
     private fun pinCheck() {
         if (enteredPin.length == 4) {
             if (enteredPin == currentPin) {
+
                 stopAlarm()
+                stopAlarmService()
+
+                isAlarmServiceActive = false
+                val editor = sharedPreferences.edit()
+                editor.putBoolean("AlarmServiceStatus", isAlarmServiceActive)
+                editor.apply()
+
                 val resultIntent = Intent()
                 setResult(Activity.RESULT_OK, resultIntent)
                 startActivity(Intent(this@EnterPinActivity, MainActivity::class.java))
@@ -236,7 +246,22 @@ class EnterPinActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        mediaPlayer?.release() // Release MediaPlayer resources
+        stopAlarm()
+        startAlarmService()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (isAlarmServiceActive) {
+            stopAlarmService()
+        }
+        triggerAlarm()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        stopAlarm()
+        stopAlarmService()
     }
 
     override fun onBackPressed() {
@@ -255,11 +280,6 @@ class EnterPinActivity : AppCompatActivity() {
         val volume = (clampedLevel * maxVolume) / 100
         audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volume, 0) // Remove FLAG_SHOW_UI
     }
-
-    /*override fun onDestroy() {
-        super.onDestroy()
-        startAlarmService()
-    }*/
 
     private fun startAlarmService() {
         val serviceIntent = Intent(this, AlarmService::class.java)
