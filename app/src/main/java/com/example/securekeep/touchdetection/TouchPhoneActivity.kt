@@ -169,9 +169,4 @@ class TouchPhoneActivity : AppCompatActivity() {
         val serviceIntent = Intent(this, MotionDetectionService::class.java)
         stopService(serviceIntent)
     }
-
-    private fun stopAlarmService() {
-        val serviceIntent = Intent(this, AlarmService::class.java)
-        stopService(serviceIntent)
-    }
 }

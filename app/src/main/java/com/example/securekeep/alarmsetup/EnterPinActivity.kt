@@ -40,7 +40,6 @@ class EnterPinActivity : AppCompatActivity() {
     private var isVibrate = false
     private var isFlash = false
     private var isAlarmServiceActive = false
-    private var mainToThis = false
     private var mediaPlayer: MediaPlayer? = null
     private lateinit var cameraManager: CameraManager
     private lateinit var cameraId: String

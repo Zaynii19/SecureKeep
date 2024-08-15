@@ -166,9 +166,4 @@ class AntiPocketActivity : AppCompatActivity() {
         val serviceIntent = Intent(this, ProximityDetectionService::class.java)
         stopService(serviceIntent)
     }
-
-    private fun stopAlarmService() {
-        val serviceIntent = Intent(this, AlarmService::class.java)
-        stopService(serviceIntent)
-    }
 }

@@ -18,12 +18,12 @@ import androidx.recyclerview.widget.GridLayoutManager
 import com.example.securekeep.RCV.RCVModel
 import com.example.securekeep.RCV.RvAdapter
 import com.example.securekeep.alarmsetup.AlarmService
-import com.example.securekeep.alarmsetup.EnterPinActivity
 import com.example.securekeep.antipocket.AntiPocketActivity
 import com.example.securekeep.databinding.ActivityMainBinding
 import com.example.securekeep.intruderdetection.IntruderActivity
 import com.example.securekeep.settings.SettingActivity
 import com.example.securekeep.touchdetection.TouchPhoneActivity
+import com.example.securekeep.wifidetection.WifiActivity
 
 class MainActivity : AppCompatActivity() {
     private val binding by lazy {

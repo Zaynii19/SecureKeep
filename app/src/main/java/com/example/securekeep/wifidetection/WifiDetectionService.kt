@@ -1,5 +1,6 @@
 package com.example.securekeep.wifidetection
 
+import android.app.ActivityManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
@@ -7,18 +8,20 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.SharedPreferences
 import android.net.ConnectivityManager
 import android.os.Build
 import android.os.IBinder
+import android.os.PowerManager
 import androidx.core.app.NotificationCompat
 import com.example.securekeep.R
+import com.example.securekeep.alarmsetup.AlarmService
 import com.example.securekeep.alarmsetup.EnterPinActivity
 
 class WifiDetectionService : Service() {
 
-    private lateinit var sharedPreferences: SharedPreferences
     private var isAlarmTriggered = false
+    private lateinit var powerManager: PowerManager
+    private lateinit var activityManager: ActivityManager
     private var lastWifiState: Boolean? = null
     private val wifiReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -36,7 +39,10 @@ class WifiDetectionService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
+
+        powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+        activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+
         startForegroundService()
     }
 
@@ -64,9 +70,20 @@ class WifiDetectionService : Service() {
     private fun triggerAlarm() {
         if (!isAlarmTriggered) {
             isAlarmTriggered = true
-            startActivity(Intent(this, EnterPinActivity::class.java).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            })
+
+            val isScreenOn = powerManager.isInteractive
+            val appInForeground = isAppInForeground()
+
+            if (isScreenOn && appInForeground) {
+                // Start activity if the screen is on and app is in the foreground
+                startActivity(Intent(this, EnterPinActivity::class.java).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                })
+            } else {
+                // Start alarm service if the screen is off or app is closed
+                startAlarmService()
+            }
+            stopSelf()
         }
     }
 
@@ -90,5 +107,20 @@ class WifiDetectionService : Service() {
         val notification = notificationBuilder.build()
 
         startForeground(1, notification)
+    }
+
+    private fun isAppInForeground(): Boolean {
+        val appProcesses = activityManager.runningAppProcesses
+        for (appProcess in appProcesses) {
+            if (appProcess.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
+                return appProcess.processName == packageName
+            }
+        }
+        return false
+    }
+
+    private fun startAlarmService() {
+        val intent = Intent(this, AlarmService::class.java)
+        startService(intent)
     }
 }

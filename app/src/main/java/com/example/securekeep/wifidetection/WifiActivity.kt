@@ -1,17 +1,20 @@
-package com.example.securekeep
+package com.example.securekeep.wifidetection
 
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.example.securekeep.R
+import com.example.securekeep.alarmsetup.EnterPinActivity
 import com.example.securekeep.databinding.ActivityWifiBinding
 import com.example.securekeep.settings.SettingActivity
-import com.example.securekeep.wifidetection.WifiDetectionService
 
 class WifiActivity : AppCompatActivity() {
     private val binding by lazy {
@@ -21,7 +24,7 @@ class WifiActivity : AppCompatActivity() {
     private var isAlarmActive = false
     private var isVibrate = false
     private var isFlash = false
-    private val ENTER_PIN_REQUEST_CODE = 1
+    private lateinit var sharedPreferences: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,10 +37,10 @@ class WifiActivity : AppCompatActivity() {
         }
 
         // Retrieving selected attempts, alert status
-        val preferences = getPreferences(MODE_PRIVATE)
-        isAlarmActive = preferences.getBoolean("AlarmStatus", false)
-        isVibrate = preferences.getBoolean("VibrateStatus", false)
-        isFlash = preferences.getBoolean("FlashStatus", false)
+        sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
+        isAlarmActive = sharedPreferences.getBoolean("AlarmStatus", false)
+        isVibrate = sharedPreferences.getBoolean("VibrateStatus", false)
+        isFlash = sharedPreferences.getBoolean("FlashStatus", false)
 
         updateUI()
 
@@ -58,12 +61,6 @@ class WifiActivity : AppCompatActivity() {
         binding.powerBtn.setOnClickListener {
             if (!isAlarmActive) {
                 isAlarmActive = true
-
-                // Storing alarmStatus value in shared preferences
-                val editor = getPreferences(MODE_PRIVATE).edit()
-                editor.putBoolean("AlarmStatus", isAlarmActive)
-                editor.apply()
-
                 alertDialog.show()
 
                 object : CountDownTimer(10000, 1000) {
@@ -75,7 +72,7 @@ class WifiActivity : AppCompatActivity() {
                         if (alertDialog.isShowing) {
                             alertDialog.dismiss()
                         }
-                        Toast.makeText(this@WifiActivity, "Wi-Fi Detection Mode Activated", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@WifiActivity, "Wifi Detection Mode Activated", Toast.LENGTH_SHORT).show()
                         updateUI()
                         startWifiDetectionService()
                     }
@@ -91,8 +88,8 @@ class WifiActivity : AppCompatActivity() {
             Toast.makeText(this, if (isVibrate) "Vibration Enabled" else "Vibration Disabled", Toast.LENGTH_SHORT).show()
 
             // Storing vibrate status value in shared preferences
-            val editor = getPreferences(MODE_PRIVATE).edit()
-            editor.putBoolean("VibrateStatus", isVibrate)
+            val editor = sharedPreferences.edit()
+            editor.putBoolean("VibrateStatus", isFlash)
             editor.apply()
         }
 
@@ -102,7 +99,7 @@ class WifiActivity : AppCompatActivity() {
             Toast.makeText(this, if (isFlash) "Flash Turned on" else "Flash Turned off", Toast.LENGTH_SHORT).show()
 
             // Storing flash status value in shared preferences
-            val editor = getPreferences(MODE_PRIVATE).edit()
+            val editor = sharedPreferences.edit()
             editor.putBoolean("FlashStatus", isFlash)
             editor.apply()
         }
@@ -121,24 +118,50 @@ class WifiActivity : AppCompatActivity() {
         binding.switchBtnF.setImageResource(if (isFlash) R.drawable.switch_on else R.drawable.switch_off)
     }
 
+    override fun onResume() {
+        super.onResume()
+        // Check if the alarm service is active when the activity resumes
+        val isAlarmServiceActive = sharedPreferences.getBoolean("AlarmServiceStatus",false)
+
+        if (isAlarmServiceActive) {
+            // Start EnterPinActivity if the alarm is active
+            startActivity(Intent(this, EnterPinActivity::class.java))
+            finish() // Optionally finish this activity if you want to prevent the user from returning to it
+        }
+    }
+
+    private fun stopWifiDetection() {
+        Toast.makeText(this@WifiActivity, "Wifi Detection Mode Deactivated", Toast.LENGTH_SHORT).show()
+        binding.powerBtn.setImageResource(R.drawable.power_on)
+        binding.activateText.text = getString(R.string.tap_to_activate)
+        isAlarmActive = false
+
+        isFlash = false
+        binding.switchBtnF.setImageResource(R.drawable.switch_off)
+
+        isVibrate = false
+        binding.switchBtnV.setImageResource(R.drawable.switch_off)
+
+        updateUI()
+
+        // Storing alarm status value in shared preferences
+        val editor = sharedPreferences.edit()
+        editor.putBoolean("AlarmStatus", isAlarmActive)
+        editor.putBoolean("FlashStatus", isFlash)
+        editor.putBoolean("VibrateStatus", isVibrate)
+        editor.apply()
+
+        stopWifiDetectionService()
+    }
+
     private fun startWifiDetectionService() {
         val serviceIntent = Intent(this, WifiDetectionService::class.java)
-        startForegroundService(serviceIntent)
+        ContextCompat.startForegroundService(this, serviceIntent)
     }
 
     private fun stopWifiDetectionService() {
         val serviceIntent = Intent(this, WifiDetectionService::class.java)
         stopService(serviceIntent)
-        // Reset alarm state in shared preferences
-        val editor = getPreferences(MODE_PRIVATE).edit()
-        editor.putBoolean("AlarmStatus", false)
-        editor.apply()
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == ENTER_PIN_REQUEST_CODE && resultCode == RESULT_OK) {
-            stopWifiDetectionService() // Stop Wi-Fi detection when alarm is deactivated
-        }
-    }
 }
