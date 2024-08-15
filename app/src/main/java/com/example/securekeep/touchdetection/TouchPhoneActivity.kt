@@ -11,12 +11,8 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.securekeep.databinding.ActivityTouchPhoneBinding
-import android.Manifest
 import android.content.SharedPreferences
-import android.content.pm.PackageManager
-import androidx.core.app.ActivityCompat
 import com.example.securekeep.R
-import com.example.securekeep.alarmsetup.AlarmService
 import com.example.securekeep.settings.SettingActivity
 import com.example.securekeep.alarmsetup.EnterPinActivity
 

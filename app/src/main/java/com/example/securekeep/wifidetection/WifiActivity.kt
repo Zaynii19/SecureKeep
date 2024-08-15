@@ -78,7 +78,7 @@ class WifiActivity : AppCompatActivity() {
                     }
                 }.start()
             } else {
-                stopWifiDetectionService()
+                stopWifiDetection()
             }
         }
 

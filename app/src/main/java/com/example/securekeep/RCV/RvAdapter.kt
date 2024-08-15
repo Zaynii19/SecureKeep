@@ -8,10 +8,10 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.*
 import com.example.securekeep.antipocket.AntiPocketActivity
-import com.example.securekeep.ChargeDetectActivity
+import com.example.securekeep.chargingdetect.ChargeDetectActivity
 import com.example.securekeep.EarphonesActivity
 import com.example.securekeep.intruderdetection.IntruderActivity
-import com.example.securekeep.OverChargeActivity
+import com.example.securekeep.overchargedetection.OverChargeActivity
 import com.example.securekeep.touchdetection.TouchPhoneActivity
 import com.example.securekeep.wifidetection.WifiActivity
 import com.example.securekeep.databinding.CatagoryItemsBinding

@@ -19,6 +19,7 @@ import com.example.securekeep.RCV.RCVModel
 import com.example.securekeep.RCV.RvAdapter
 import com.example.securekeep.alarmsetup.AlarmService
 import com.example.securekeep.antipocket.AntiPocketActivity
+import com.example.securekeep.chargingdetect.ChargeDetectActivity
 import com.example.securekeep.databinding.ActivityMainBinding
 import com.example.securekeep.intruderdetection.IntruderActivity
 import com.example.securekeep.settings.SettingActivity
