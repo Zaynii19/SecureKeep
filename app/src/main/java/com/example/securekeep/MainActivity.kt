@@ -1,24 +1,25 @@
 package com.example.securekeep
 
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
-import android.os.Build
+import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import com.example.securekeep.RCV.RCVModel
 import com.example.securekeep.RCV.RvAdapter
+import com.example.securekeep.alarmsetup.AlarmService
 import com.example.securekeep.alarmsetup.EnterPinActivity
+import com.example.securekeep.antipocket.AntiPocketActivity
 import com.example.securekeep.databinding.ActivityMainBinding
 import com.example.securekeep.intruderdetection.IntruderActivity
 import com.example.securekeep.settings.SettingActivity
@@ -31,7 +32,13 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var toggle: ActionBarDrawerToggle
     private var categoryList = ArrayList<RCVModel>()
-    private lateinit var requestNotificationPermissionLauncher: ActivityResultLauncher<String>
+    private lateinit var sharedPreferences: SharedPreferences
+    private val requiredPermissions = arrayOf(
+        android.Manifest.permission.POST_NOTIFICATIONS,
+        android.Manifest.permission.ACCESS_FINE_LOCATION,
+        android.Manifest.permission.ACCESS_COARSE_LOCATION
+    )
+    private val permissionsRequestCode = 1001
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,19 +49,15 @@ class MainActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-        setupUI()
-        setupPermissionRequest()
-        initializeCategoryList()
 
-        // Check and request notification permission if needed
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            checkNotificationPermission()
-        }
+        sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
+
+        setupUI()
+        requestNecessaryPermissions()  // Request only necessary permissions
+        initializeCategoryList()
     }
 
     private fun setupUI() {
-
-
         binding.settingBtn.setOnClickListener {
             startActivity(Intent(this, SettingActivity::class.java))
         }
@@ -84,43 +87,36 @@ class MainActivity : AppCompatActivity() {
         binding.rcv.setHasFixedSize(true)
     }
 
-    override fun onResume() {
-        super.onResume()
-        // Check if the alarm is active when the activity resumes
-        val sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
-        val isAlarmActive = sharedPreferences.getBoolean("AlarmStatus", false)
+    private fun requestNecessaryPermissions() {
+        val permissionsToRequest = requiredPermissions.filter { permission ->
+            ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED
+        }.toTypedArray()
 
-        if (isAlarmActive) {
-            // Start EnterPinActivity if the alarm is active
-            startActivity(Intent(this, EnterPinActivity::class.java))
-            finish() // Optionally finish this activity if you want to prevent the user from returning to it
+        if (permissionsToRequest.isNotEmpty()) {
+            ActivityCompat.requestPermissions(this, permissionsToRequest, permissionsRequestCode)
         }
     }
 
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == permissionsRequestCode) {
+            val permissionsGranted = grantResults.isNotEmpty() &&
+                    grantResults.all { result -> result == PackageManager.PERMISSION_GRANTED }
 
-    private fun setupPermissionRequest() {
-        requestNotificationPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-            if (isGranted) {
-                Toast.makeText(this, "Notification permission granted", Toast.LENGTH_SHORT).show()
+            if (permissionsGranted) {
+                Toast.makeText(this, "All requested permissions granted", Toast.LENGTH_SHORT).show()
             } else {
-                Toast.makeText(this, "Notification permission denied", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Some permissions were denied", Toast.LENGTH_SHORT).show()
+                // Optionally, guide the user to app settings
+                openAppSettings()
             }
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private fun checkNotificationPermission() {
-        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-            requestNotificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
-        }
-    }
-
-
-    private fun showPermissionDeniedMessage() {
-        Toast.makeText(this, "Notification permission is required to show alerts.", Toast.LENGTH_LONG).show()
-        val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-            putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
-        }
+    private fun openAppSettings() {
+        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+        val uri = Uri.fromParts("package", packageName, null)
+        intent.data = uri
         startActivity(intent)
     }
 
@@ -132,5 +128,10 @@ class MainActivity : AppCompatActivity() {
         categoryList.add(RCVModel(R.drawable.wifi, "Wifi Detection", "Alarm when someone try to on/off your wifi"))
         categoryList.add(RCVModel(R.drawable.battery, "Avoid Over Charging", "Alarm when battery is fully charged"))
         categoryList.add(RCVModel(R.drawable.headphone, "Earphones Detection", "Earphones detections"))
+    }
+
+    private fun stopAlarmService() {
+        val serviceIntent = Intent(this, AlarmService::class.java)
+        stopService(serviceIntent)
     }
 }

@@ -1,3 +1,4 @@
+
 package com.example.securekeep.alarmsetup
 
 import android.app.PendingIntent
@@ -57,9 +58,7 @@ class AlarmService : Service() {
         editor.putBoolean("AlarmServiceStatus", isAlarmServiceActive)
         editor.apply()
 
-        mediaPlayer = MediaPlayer.create(this, sharedPreferences.getInt("alarm_tone",
-            R.raw.alarm_tune_1
-        ))
+        mediaPlayer = MediaPlayer.create(this, sharedPreferences.getInt("alarm_tone", R.raw.alarm_tune_1))
         setSystemSoundLevel(currentSoundLevel)
         startForegroundService()
         acquireWakeLock()
@@ -74,8 +73,14 @@ class AlarmService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         stopAlarm()
+        // Update SharedPreferences to set AlarmServiceStatus to false
+        val editor = sharedPreferences.edit()
+        editor.putBoolean("AlarmServiceStatus", false)
+        editor.apply()
+
         releaseWakeLock()
     }
+
 
     private fun startForegroundService() {
         // Intent to launch EnterPinActivity when the notification is clicked

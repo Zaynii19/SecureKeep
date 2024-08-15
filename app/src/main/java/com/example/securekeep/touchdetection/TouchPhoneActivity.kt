@@ -16,6 +16,7 @@ import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import androidx.core.app.ActivityCompat
 import com.example.securekeep.R
+import com.example.securekeep.alarmsetup.AlarmService
 import com.example.securekeep.settings.SettingActivity
 import com.example.securekeep.alarmsetup.EnterPinActivity
 
@@ -24,7 +25,6 @@ class TouchPhoneActivity : AppCompatActivity() {
     private val binding by lazy {
         ActivityTouchPhoneBinding.inflate(layoutInflater)
     }
-
     private lateinit var alertDialog: AlertDialog
     private var isAlarmActive = false
     private var isVibrate = false
@@ -41,16 +41,11 @@ class TouchPhoneActivity : AppCompatActivity() {
             insets
         }
 
-        requestLocationPermissions()
-
-        // Initialize SharedPreferences
+        // Retrieving selected attempts, alert status
         sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
-        // Retrieving saved states
         isAlarmActive = sharedPreferences.getBoolean("AlarmStatus", false)
         isVibrate = sharedPreferences.getBoolean("VibrateStatus", false)
         isFlash = sharedPreferences.getBoolean("FlashStatus", false)
-
-
 
         updateUI()
 
@@ -71,12 +66,6 @@ class TouchPhoneActivity : AppCompatActivity() {
         binding.powerBtn.setOnClickListener {
             if (!isAlarmActive) {
                 isAlarmActive = true
-
-                // Storing alarm status value in shared preferences
-                val editor = getPreferences(MODE_PRIVATE).edit()
-                editor.putBoolean("AlarmStatus", isAlarmActive)
-                editor.apply()
-
                 alertDialog.show()
 
                 object : CountDownTimer(10000, 1000) {
@@ -136,8 +125,10 @@ class TouchPhoneActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Check if the alarm is active when the activity resumes
-        if (isAlarmActive) {
+        // Check if the alarm service is active when the activity resumes
+        val isAlarmServiceActive = sharedPreferences.getBoolean("AlarmServiceStatus",false)
+
+        if (isAlarmServiceActive) {
             // Start EnterPinActivity if the alarm is active
             startActivity(Intent(this, EnterPinActivity::class.java))
             finish() // Optionally finish this activity if you want to prevent the user from returning to it
@@ -160,7 +151,7 @@ class TouchPhoneActivity : AppCompatActivity() {
         updateUI()
 
         // Storing alarm status value in shared preferences
-        val editor = getPreferences(MODE_PRIVATE).edit()
+        val editor = sharedPreferences.edit()
         editor.putBoolean("AlarmStatus", isAlarmActive)
         editor.putBoolean("FlashStatus", isFlash)
         editor.putBoolean("VibrateStatus", isVibrate)
@@ -179,27 +170,8 @@ class TouchPhoneActivity : AppCompatActivity() {
         stopService(serviceIntent)
     }
 
-    private fun requestLocationPermissions() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
-            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-
-            ActivityCompat.requestPermissions(this, arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ), 101)
-        }
+    private fun stopAlarmService() {
+        val serviceIntent = Intent(this, AlarmService::class.java)
+        stopService(serviceIntent)
     }
-
-
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == 101) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this@TouchPhoneActivity, "Location Permission Granted", Toast.LENGTH_SHORT).show()
-            } else {
-                requestLocationPermissions()
-            }
-        }
-    }
-
 }

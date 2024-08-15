@@ -5,6 +5,8 @@
 
     <!-- Permissions -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.BLUETOOTH" />
@@ -16,6 +18,7 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.SENSOR"/>
 
     <!-- Scoped Storage Permissions -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"
@@ -61,7 +64,7 @@
         <activity android:name=".OverChargeActivity" android:exported="false" />
         <activity android:name=".WifiActivity" android:exported="false" />
         <activity android:name=".ChargeDetectActivity" android:exported="false" />
-        <activity android:name=".AntiPocketActivity" android:exported="false" android:theme="@style/Theme.SecureKeep" />
+        <activity android:name=".antipocket.AntiPocketActivity" android:exported="false" android:theme="@style/Theme.SecureKeep" />
         <activity android:name=".touchdetection.TouchPhoneActivity" android:exported="false" />
         <activity android:name=".intruderdetection.IntruderActivity" android:exported="false" />
         <activity android:name=".SplashScreen" android:exported="true">
@@ -97,9 +100,19 @@
             android:foregroundServiceType="location" />
 
         <service
+            android:name=".antipocket.ProximityDetectionService"
+            android:exported="false"
+            android:foregroundServiceType="location" />
+
+        <service
             android:name=".alarmsetup.AlarmService"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
+
+        <service
+            android:name=".wifidetection.WifiDetectionService"
+            android:exported="false" />
+
 
     </application>
 </manifest>

@@ -1,5 +1,6 @@
-package com.example.securekeep.touchdetection
+package com.example.securekeep.antipocket
 
+import android.app.ActivityManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
@@ -13,25 +14,19 @@ import android.hardware.SensorManager
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
-import android.app.ActivityManager
-import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.securekeep.R
 import com.example.securekeep.alarmsetup.AlarmService
 import com.example.securekeep.alarmsetup.EnterPinActivity
 
-class MotionDetectionService : Service(), SensorEventListener {
+class ProximityDetectionService : Service(), SensorEventListener {
 
     private lateinit var sensorManager: SensorManager
-    private lateinit var accelerometer: Sensor
-    private var mAccel: Float = 0.0f
-    private var mAccelCurrent: Float = 0.0f
-    private var mAccelLast: Float = 0.0f
-    private var motionSensitivity: Float = 5.0f
-    private var isAlarmTriggered = false
+    private lateinit var proximitySensor: Sensor
     private lateinit var sharedPreferences: SharedPreferences
     private lateinit var powerManager: PowerManager
     private lateinit var activityManager: ActivityManager
+    private var isAlarmTriggered = false
 
     override fun onCreate() {
         super.onCreate()
@@ -39,16 +34,13 @@ class MotionDetectionService : Service(), SensorEventListener {
         powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
         activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
         sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
-        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)!!
-
-        // Retrieve the saved motion sensitivity
-        motionSensitivity = sharedPreferences.getFloat("motionSensitivity", 15.0f)
+        proximitySensor = sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY)!!
 
         startForegroundService()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI)
+        sensorManager.registerListener(this, proximitySensor, SensorManager.SENSOR_DELAY_UI)
         return START_STICKY
     }
 
@@ -58,21 +50,9 @@ class MotionDetectionService : Service(), SensorEventListener {
     }
 
     override fun onSensorChanged(event: SensorEvent) {
-        if (event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
-            val values = event.values
-            val x = values[0]
-            val y = values[1]
-            val z = values[2]
-            mAccelLast = mAccelCurrent
-            mAccelCurrent = Math.sqrt((x * x + y * y + z * z).toDouble()).toFloat()
-            val delta = mAccelCurrent - mAccelLast
-            mAccel = mAccel * 0.9f + delta
-
-            Log.d("MotionDetectionService", "mAccelCurrent: $mAccelCurrent, motionSensitivity: $motionSensitivity")
-
-            if (mAccelCurrent > motionSensitivity && !isAlarmTriggered) {
+        if (event.sensor.type == Sensor.TYPE_PROXIMITY) {
+            if (event.values[0] < proximitySensor.maximumRange && !isAlarmTriggered) {
                 isAlarmTriggered = true
-
                 val isScreenOn = powerManager.isInteractive
                 val appInForeground = isAppInForeground()
 
@@ -90,26 +70,29 @@ class MotionDetectionService : Service(), SensorEventListener {
         }
     }
 
-    override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {
-        // Do nothing
+    private fun startAlarmService() {
+        val intent = Intent(this, AlarmService::class.java)
+        startService(intent)
     }
+
+    override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {}
 
     private fun startForegroundService() {
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         // Create a notification channel (required for Android O and above)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channelId = "motion_detection_channel"
-            val channelName = "Motion Detection Service"
+            val channelId = "proximity_detection_channel"
+            val channelName = "Proximity Detection Service"
             val importance = NotificationManager.IMPORTANCE_LOW
             val notificationChannel = NotificationChannel(channelId, channelName, importance)
             notificationManager.createNotificationChannel(notificationChannel)
         }
 
         // Create the notification
-        val notificationBuilder = NotificationCompat.Builder(this, "motion_detection_channel")
-            .setContentTitle("Motion Detection Active")
-            .setContentText("Detecting motion...")
+        val notificationBuilder = NotificationCompat.Builder(this, "proximity_detection_channel")
+            .setContentTitle("Proximity Detection Active")
+            .setContentText("Detecting proximity...")
             .setSmallIcon(R.drawable.info)  // Replace with your own icon
             .setPriority(NotificationCompat.PRIORITY_LOW)
 
@@ -117,11 +100,6 @@ class MotionDetectionService : Service(), SensorEventListener {
 
         // Start the service in the foreground
         startForeground(1, notification)
-    }
-
-    private fun startAlarmService() {
-        val intent = Intent(this, AlarmService::class.java)
-        startService(intent)
     }
 
     private fun isAppInForeground(): Boolean {

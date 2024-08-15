@@ -7,7 +7,7 @@ import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.*
-import com.example.securekeep.AntiPocketActivity
+import com.example.securekeep.antipocket.AntiPocketActivity
 import com.example.securekeep.ChargeDetectActivity
 import com.example.securekeep.EarphonesActivity
 import com.example.securekeep.intruderdetection.IntruderActivity

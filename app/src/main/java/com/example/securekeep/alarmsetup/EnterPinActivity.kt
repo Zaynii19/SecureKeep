@@ -1,7 +1,7 @@
+
 package com.example.securekeep.alarmsetup
 
 import android.app.Activity
-import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
@@ -14,10 +14,10 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.os.PowerManager
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -40,6 +40,7 @@ class EnterPinActivity : AppCompatActivity() {
     private var isVibrate = false
     private var isFlash = false
     private var isAlarmServiceActive = false
+    private var mainToThis = false
     private var mediaPlayer: MediaPlayer? = null
     private lateinit var cameraManager: CameraManager
     private lateinit var cameraId: String
@@ -190,11 +191,6 @@ class EnterPinActivity : AppCompatActivity() {
     }
 
     private fun stopAlarm() {
-        isAlarmServiceActive = false
-        val editor = sharedPreferences.edit()
-        editor.putBoolean("AlarmServiceStatus", isAlarmServiceActive)
-        editor.apply()
-
         mediaPlayer?.apply {
             if (isPlaying) {
                 stop()
