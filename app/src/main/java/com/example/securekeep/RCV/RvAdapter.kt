@@ -9,7 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.*
 import com.example.securekeep.antipocket.AntiPocketActivity
 import com.example.securekeep.chargingdetect.ChargeDetectActivity
-import com.example.securekeep.EarphonesActivity
+import com.example.securekeep.earphonedetection.EarphonesActivity
 import com.example.securekeep.intruderdetection.IntruderActivity
 import com.example.securekeep.overchargedetection.OverChargeActivity
 import com.example.securekeep.touchdetection.TouchPhoneActivity

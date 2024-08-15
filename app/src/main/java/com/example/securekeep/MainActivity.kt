@@ -17,7 +17,6 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import com.example.securekeep.RCV.RCVModel
 import com.example.securekeep.RCV.RvAdapter
-import com.example.securekeep.alarmsetup.AlarmService
 import com.example.securekeep.antipocket.AntiPocketActivity
 import com.example.securekeep.chargingdetect.ChargeDetectActivity
 import com.example.securekeep.databinding.ActivityMainBinding
@@ -25,6 +24,8 @@ import com.example.securekeep.intruderdetection.IntruderActivity
 import com.example.securekeep.settings.SettingActivity
 import com.example.securekeep.touchdetection.TouchPhoneActivity
 import com.example.securekeep.wifidetection.WifiActivity
+import android.Manifest
+import com.example.securekeep.earphonedetection.EarphonesActivity
 
 class MainActivity : AppCompatActivity() {
     private val binding by lazy {
@@ -35,9 +36,10 @@ class MainActivity : AppCompatActivity() {
     private var categoryList = ArrayList<RCVModel>()
     private lateinit var sharedPreferences: SharedPreferences
     private val requiredPermissions = arrayOf(
-        android.Manifest.permission.POST_NOTIFICATIONS,
-        android.Manifest.permission.ACCESS_FINE_LOCATION,
-        android.Manifest.permission.ACCESS_COARSE_LOCATION
+        Manifest.permission.POST_NOTIFICATIONS,
+        Manifest.permission.ACCESS_FINE_LOCATION,
+        Manifest.permission.ACCESS_COARSE_LOCATION,
+        Manifest.permission.BLUETOOTH_CONNECT
     )
     private val permissionsRequestCode = 1001
 
@@ -130,9 +132,5 @@ class MainActivity : AppCompatActivity() {
         categoryList.add(RCVModel(R.drawable.battery, "Avoid Over Charging", "Alarm when battery is fully charged"))
         categoryList.add(RCVModel(R.drawable.headphone, "Earphones Detection", "Earphones detections"))
     }
-
-    private fun stopAlarmService() {
-        val serviceIntent = Intent(this, AlarmService::class.java)
-        stopService(serviceIntent)
-    }
 }
+

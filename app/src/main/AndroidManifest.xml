@@ -63,7 +63,7 @@
         <activity android:name=".intruderdetection.IntruderSelfieActivity" android:exported="false" />
         <activity android:name=".settings.SettingActivity" android:exported="false" />
         <activity android:name=".alarmsetup.EnterPinActivity" android:exported="true" />
-        <activity android:name=".EarphonesActivity" android:exported="false" />
+        <activity android:name=".earphonedetection.EarphonesActivity" android:exported="false" />
         <activity android:name=".overchargedetection.OverChargeActivity" android:exported="false" />
         <activity android:name=".wifidetection.WifiActivity" android:exported="false" />
         <activity android:name=".chargingdetect.ChargeDetectActivity" android:exported="false" />
@@ -126,6 +126,11 @@
             android:name=".chargingdetect.ChargingDetectionService"
             android:exported="false"
             android:foregroundServiceType="connectedDevice"/>
+
+        <service
+            android:name=".earphonedetection.EarphoneDetectionService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback|connectedDevice" />
 
     </application>
 </manifest>
