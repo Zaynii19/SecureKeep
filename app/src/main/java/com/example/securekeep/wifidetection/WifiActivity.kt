@@ -38,9 +38,9 @@ class WifiActivity : AppCompatActivity() {
 
         // Retrieving selected attempts, alert status
         sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
-        isAlarmActive = sharedPreferences.getBoolean("AlarmStatus", false)
-        isVibrate = sharedPreferences.getBoolean("VibrateStatus", false)
-        isFlash = sharedPreferences.getBoolean("FlashStatus", false)
+        isAlarmActive = sharedPreferences.getBoolean("AlarmStatusWifi", false)
+        isVibrate = sharedPreferences.getBoolean("VibrateStatusWifi", false)
+        isFlash = sharedPreferences.getBoolean("FlashStatusWifi", false)
 
         updateUI()
 
@@ -75,6 +75,10 @@ class WifiActivity : AppCompatActivity() {
                         Toast.makeText(this@WifiActivity, "Wifi Detection Mode Activated", Toast.LENGTH_SHORT).show()
                         updateUI()
                         startWifiDetectionService()
+                        // Storing alarm status value in shared preferences
+                        val editor = sharedPreferences.edit()
+                        editor.putBoolean("AlarmStatusWifi", isAlarmActive)
+                        editor.apply()
                     }
                 }.start()
             } else {
@@ -89,7 +93,7 @@ class WifiActivity : AppCompatActivity() {
 
             // Storing vibrate status value in shared preferences
             val editor = sharedPreferences.edit()
-            editor.putBoolean("VibrateStatus", isFlash)
+            editor.putBoolean("VibrateStatusWifi", isFlash)
             editor.apply()
         }
 
@@ -100,7 +104,7 @@ class WifiActivity : AppCompatActivity() {
 
             // Storing flash status value in shared preferences
             val editor = sharedPreferences.edit()
-            editor.putBoolean("FlashStatus", isFlash)
+            editor.putBoolean("FlashStatusWifi", isFlash)
             editor.apply()
         }
     }
@@ -120,13 +124,21 @@ class WifiActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Check if the alarm service is active when the activity resumes
-        val isAlarmServiceActive = sharedPreferences.getBoolean("AlarmServiceStatus",false)
+        val isAlarmServiceActive = sharedPreferences.getBoolean("AlarmServiceStatus", false)
+        isAlarmActive = sharedPreferences.getBoolean("AlarmStatusWifi", false)
+        isFlash = sharedPreferences.getBoolean("FlashStatusWifi", false)
+        isVibrate = sharedPreferences.getBoolean("VibrateStatusWifi", false)
 
         if (isAlarmServiceActive) {
-            // Start EnterPinActivity if the alarm is active
-            startActivity(Intent(this, EnterPinActivity::class.java))
-            finish() // Optionally finish this activity if you want to prevent the user from returning to it
+            // Create a new intent with the necessary extras
+            val intent = Intent(this, EnterPinActivity::class.java).apply {
+                putExtra("Alarm", isAlarmActive)
+                putExtra("Flash", isFlash)
+                putExtra("Vibrate", isVibrate)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            }
+            startActivity(intent)
+            finish() // Finish this activity to prevent returning to it
         }
     }
 
@@ -146,9 +158,9 @@ class WifiActivity : AppCompatActivity() {
 
         // Storing alarm status value in shared preferences
         val editor = sharedPreferences.edit()
-        editor.putBoolean("AlarmStatus", isAlarmActive)
-        editor.putBoolean("FlashStatus", isFlash)
-        editor.putBoolean("VibrateStatus", isVibrate)
+        editor.putBoolean("AlarmStatusWifi", isAlarmActive)
+        editor.putBoolean("FlashStatusWifi", isFlash)
+        editor.putBoolean("VibrateStatusWifi", isVibrate)
         editor.apply()
 
         stopWifiDetectionService()
@@ -156,6 +168,9 @@ class WifiActivity : AppCompatActivity() {
 
     private fun startWifiDetectionService() {
         val serviceIntent = Intent(this, WifiDetectionService::class.java)
+        serviceIntent.putExtra("Alarm", isAlarmActive)
+        serviceIntent.putExtra("Flash", isFlash)
+        serviceIntent.putExtra("Vibrate", isVibrate)
         ContextCompat.startForegroundService(this, serviceIntent)
     }
 

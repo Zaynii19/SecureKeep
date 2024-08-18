@@ -18,6 +18,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.securekeep.R
+import com.example.securekeep.alarmsetup.EnterPinActivity
 import com.example.securekeep.databinding.ActivityEarphonesBinding
 import com.example.securekeep.settings.SettingActivity
 
@@ -43,9 +44,9 @@ class EarphonesActivity : AppCompatActivity() {
 
         // Retrieving selected attempts, alert status
         sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
-        isAlarmActive = sharedPreferences.getBoolean("AlarmStatus", false)
-        isVibrate = sharedPreferences.getBoolean("VibrateStatus", false)
-        isFlash = sharedPreferences.getBoolean("FlashStatus", false)
+        isAlarmActive = sharedPreferences.getBoolean("AlarmStatusEarphone", false)
+        isVibrate = sharedPreferences.getBoolean("VibrateStatusEarphone", false)
+        isFlash = sharedPreferences.getBoolean("FlashStatusEarphone", false)
 
         updateUI()
 
@@ -94,6 +95,10 @@ class EarphonesActivity : AppCompatActivity() {
                             Toast.makeText(this@EarphonesActivity, "Earphones Detection Mode Activated", Toast.LENGTH_SHORT).show()
                             updateUI()
                             startEarphoneDetectionService()
+                            // Storing alarm status value in shared preferences
+                            val editor = sharedPreferences.edit()
+                            editor.putBoolean("AlarmStatusEarphone", isAlarmActive)
+                            editor.apply()
                         }
                     }.start()
                 }
@@ -109,7 +114,7 @@ class EarphonesActivity : AppCompatActivity() {
 
             // Storing vibrate status value in shared preferences
             val editor = sharedPreferences.edit()
-            editor.putBoolean("VibrateStatus", isVibrate)
+            editor.putBoolean("VibrateStatusEarphone", isVibrate)
             editor.apply()
         }
 
@@ -120,13 +125,33 @@ class EarphonesActivity : AppCompatActivity() {
 
             // Storing flash status value in shared preferences
             val editor = sharedPreferences.edit()
-            editor.putBoolean("FlashStatus", isFlash)
+            editor.putBoolean("FlashStatusEarphone", isFlash)
             editor.apply()
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        val isAlarmServiceActive = sharedPreferences.getBoolean("AlarmServiceStatus", false)
+        isAlarmActive = sharedPreferences.getBoolean("AlarmStatusEarphone", false)
+        isFlash = sharedPreferences.getBoolean("FlashStatusEarphone", false)
+        isVibrate = sharedPreferences.getBoolean("VibrateStatusEarphone", false)
+
+        if (isAlarmServiceActive) {
+            // Create a new intent with the necessary extras
+            val intent = Intent(this, EnterPinActivity::class.java).apply {
+                putExtra("Alarm", isAlarmActive)
+                putExtra("Flash", isFlash)
+                putExtra("Vibrate", isVibrate)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            }
+            startActivity(intent)
+            finish() // Finish this activity to prevent returning to it
+        }
+    }
+
     private fun stopEarphoneDetection() {
-        if (isWiredHeadsetConnected()) {
+        if (isEarphonesConnected()) {
             isAlarmActive = false
 
             isFlash = false
@@ -139,32 +164,13 @@ class EarphonesActivity : AppCompatActivity() {
 
             // Storing alarm status value in shared preferences
             val editor = sharedPreferences.edit()
-            editor.putBoolean("AlarmStatus", isAlarmActive)
-            editor.putBoolean("FlashStatus", isFlash)
-            editor.putBoolean("VibrateStatus", isVibrate)
+            editor.putBoolean("AlarmStatusEarphone", isAlarmActive)
+            editor.putBoolean("FlashStatusEarphone", isFlash)
+            editor.putBoolean("VibrateStatusEarphone", isVibrate)
             editor.apply()
 
             stopEarphoneDetectionService()
 
-        } else if (isBluetoothHeadsetConnected()){
-            isAlarmActive = false
-
-            isFlash = false
-            binding.switchBtnF.setImageResource(R.drawable.switch_off)
-
-            isVibrate = false
-            binding.switchBtnV.setImageResource(R.drawable.switch_off)
-
-            updateUI()
-
-            // Storing alarm status value in shared preferences
-            val editor = sharedPreferences.edit()
-            editor.putBoolean("AlarmStatus", isAlarmActive)
-            editor.putBoolean("FlashStatus", isFlash)
-            editor.putBoolean("VibrateStatus", isVibrate)
-            editor.apply()
-
-            stopEarphoneDetectionService()
         }
     }
 
@@ -204,6 +210,9 @@ class EarphonesActivity : AppCompatActivity() {
 
     private fun startEarphoneDetectionService() {
         val intent = Intent(this, EarphoneDetectionService::class.java)
+        intent.putExtra("Alarm", isAlarmActive)
+        intent.putExtra("Flash", isFlash)
+        intent.putExtra("Vibrate", isVibrate)
         startService(intent)
     }
 

@@ -25,6 +25,7 @@ import com.example.securekeep.settings.SettingActivity
 import com.example.securekeep.touchdetection.TouchPhoneActivity
 import com.example.securekeep.wifidetection.WifiActivity
 import android.Manifest
+import android.os.Build
 import com.example.securekeep.earphonedetection.EarphonesActivity
 
 class MainActivity : AppCompatActivity() {
@@ -35,12 +36,19 @@ class MainActivity : AppCompatActivity() {
     private lateinit var toggle: ActionBarDrawerToggle
     private var categoryList = ArrayList<RCVModel>()
     private lateinit var sharedPreferences: SharedPreferences
-    private val requiredPermissions = arrayOf(
-        Manifest.permission.POST_NOTIFICATIONS,
-        Manifest.permission.ACCESS_FINE_LOCATION,
-        Manifest.permission.ACCESS_COARSE_LOCATION,
-        Manifest.permission.BLUETOOTH_CONNECT
-    )
+    private val requiredPermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        arrayOf(
+            Manifest.permission.POST_NOTIFICATIONS,
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.BLUETOOTH_CONNECT
+        )
+    } else {
+            arrayOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            )
+    }
     private val permissionsRequestCode = 1001
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -103,8 +111,7 @@ class MainActivity : AppCompatActivity() {
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == permissionsRequestCode) {
-            val permissionsGranted = grantResults.isNotEmpty() &&
-                    grantResults.all { result -> result == PackageManager.PERMISSION_GRANTED }
+            val permissionsGranted = grantResults.isNotEmpty() && grantResults.all { result -> result == PackageManager.PERMISSION_GRANTED }
 
             if (permissionsGranted) {
                 Toast.makeText(this, "All requested permissions granted", Toast.LENGTH_SHORT).show()

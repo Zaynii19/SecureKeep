@@ -1,6 +1,7 @@
 package com.example.securekeep.touchdetection
 
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.widget.Toast
@@ -10,11 +11,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.example.securekeep.databinding.ActivityTouchPhoneBinding
-import android.content.SharedPreferences
 import com.example.securekeep.R
-import com.example.securekeep.settings.SettingActivity
 import com.example.securekeep.alarmsetup.EnterPinActivity
+import com.example.securekeep.databinding.ActivityTouchPhoneBinding
+import com.example.securekeep.settings.SettingActivity
 
 class TouchPhoneActivity : AppCompatActivity() {
 
@@ -39,9 +39,9 @@ class TouchPhoneActivity : AppCompatActivity() {
 
         // Retrieving selected attempts, alert status
         sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
-        isAlarmActive = sharedPreferences.getBoolean("AlarmStatus", false)
-        isVibrate = sharedPreferences.getBoolean("VibrateStatus", false)
-        isFlash = sharedPreferences.getBoolean("FlashStatus", false)
+        isAlarmActive = sharedPreferences.getBoolean("AlarmStatusTouch", false)
+        isVibrate = sharedPreferences.getBoolean("VibrateStatusTouch", false)
+        isFlash = sharedPreferences.getBoolean("FlashStatusTouch", false)
 
         updateUI()
 
@@ -76,6 +76,10 @@ class TouchPhoneActivity : AppCompatActivity() {
                         Toast.makeText(this@TouchPhoneActivity, "Motion Detection Mode Activated", Toast.LENGTH_SHORT).show()
                         updateUI()
                         startMotionDetectionService()
+                        // Storing alarm status value in shared preferences
+                        val editor = sharedPreferences.edit()
+                        editor.putBoolean("AlarmStatusTouch", isAlarmActive)
+                        editor.apply()
                     }
                 }.start()
             } else {
@@ -90,7 +94,7 @@ class TouchPhoneActivity : AppCompatActivity() {
 
             // Storing vibrate status value in shared preferences
             val editor = sharedPreferences.edit()
-            editor.putBoolean("VibrateStatus", isFlash)
+            editor.putBoolean("VibrateStatusTouch", isFlash)
             editor.apply()
         }
 
@@ -101,7 +105,7 @@ class TouchPhoneActivity : AppCompatActivity() {
 
             // Storing flash status value in shared preferences
             val editor = sharedPreferences.edit()
-            editor.putBoolean("FlashStatus", isFlash)
+            editor.putBoolean("FlashStatusTouch", isFlash)
             editor.apply()
         }
     }
@@ -121,16 +125,23 @@ class TouchPhoneActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Check if the alarm service is active when the activity resumes
-        val isAlarmServiceActive = sharedPreferences.getBoolean("AlarmServiceStatus",false)
+        val isAlarmServiceActive = sharedPreferences.getBoolean("AlarmServiceStatus", false)
+        isAlarmActive = sharedPreferences.getBoolean("AlarmStatusTouch", false)
+        isFlash = sharedPreferences.getBoolean("FlashStatusTouch", false)
+        isVibrate = sharedPreferences.getBoolean("VibrateStatusTouch", false)
 
         if (isAlarmServiceActive) {
-            // Start EnterPinActivity if the alarm is active
-            startActivity(Intent(this, EnterPinActivity::class.java))
-            finish() // Optionally finish this activity if you want to prevent the user from returning to it
+            // Create a new intent with the necessary extras
+            val intent = Intent(this, EnterPinActivity::class.java).apply {
+                putExtra("Alarm", isAlarmActive)
+                putExtra("Flash", isFlash)
+                putExtra("Vibrate", isVibrate)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            }
+            startActivity(intent)
+            finish() // Finish this activity to prevent returning to it
         }
     }
-
 
     private fun deactivateMotionDetection() {
         Toast.makeText(this@TouchPhoneActivity, "Motion Detection Mode Deactivated", Toast.LENGTH_SHORT).show()
@@ -148,9 +159,9 @@ class TouchPhoneActivity : AppCompatActivity() {
 
         // Storing alarm status value in shared preferences
         val editor = sharedPreferences.edit()
-        editor.putBoolean("AlarmStatus", isAlarmActive)
-        editor.putBoolean("FlashStatus", isFlash)
-        editor.putBoolean("VibrateStatus", isVibrate)
+        editor.putBoolean("AlarmStatusTouch", isAlarmActive)
+        editor.putBoolean("FlashStatusTouch", isFlash)
+        editor.putBoolean("VibrateStatusTouch", isVibrate)
         editor.apply()
 
         stopMotionDetectionService()
@@ -158,6 +169,9 @@ class TouchPhoneActivity : AppCompatActivity() {
 
     private fun startMotionDetectionService() {
         val serviceIntent = Intent(this, MotionDetectionService::class.java)
+        serviceIntent.putExtra("Alarm", isAlarmActive)
+        serviceIntent.putExtra("Flash", isFlash)
+        serviceIntent.putExtra("Vibrate", isVibrate)
         ContextCompat.startForegroundService(this, serviceIntent)
     }
 

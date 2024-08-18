@@ -1,17 +1,17 @@
 package com.example.securekeep.intruderdetection
 
-import android.app.Notification
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
-import android.Manifest
 import com.example.securekeep.R
 
 
@@ -24,16 +24,18 @@ class CameraService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+
         myCameraManager = MyCameraManager.getInstance(this)
-        createNotificationChannel()
-        startForeground(1, createNotification())
-        captureSelfie()
+
+        startForegroundService()
+
         Log.d("CameraService", "Service created.")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d("CameraService", "Service Started.")
-        return START_NOT_STICKY
+        captureSelfie() // Moved to onStartCommand to ensure service is operational.
+        return START_STICKY // Change if you want it to restart automatically
     }
 
     private fun captureSelfie() {
@@ -45,33 +47,34 @@ class CameraService : Service() {
         }
     }
 
-    private fun createNotification(): Notification {
-        return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Camera Service")
-            .setContentText("Capturing selfie...")
-            .setSmallIcon(R.drawable.camera)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            .build()
-    }
-
-    private fun createNotificationChannel() {
-        val name = "Camera Service Channel"
-        val descriptionText = "Channel for Camera Service"
-        val importance = NotificationManager.IMPORTANCE_LOW
-        val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
-            description = descriptionText
-        }
+    private fun startForegroundService() {
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.createNotificationChannel(channel)
+
+        // Create a notification channel (required for Android O and above)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channelId = "intruder_detection_channel"
+            val channelName = "Intruder Detection Service"
+            val importance = NotificationManager.IMPORTANCE_LOW
+            val notificationChannel = NotificationChannel(channelId, channelName, importance)
+            notificationManager.createNotificationChannel(notificationChannel)
+        }
+
+        // Create the notification
+        val notificationBuilder = NotificationCompat.Builder(this, "intruder_detection_channel")
+            .setContentTitle("Intruder Detection Active")
+            .setContentText("Detecting Screen Lock")
+            .setSmallIcon(R.drawable.info)  // Replace with your own icon
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+
+        val notification = notificationBuilder.build()
+
+        // Start the service in the foreground
+        startForeground(1, notification)
     }
 
     override fun onDestroy() {
         super.onDestroy()
         Log.d("CameraService", "CameraService destroyed.")
-    }
-
-    companion object {
-        private const val CHANNEL_ID = "CameraServiceChannel"
     }
 }
 

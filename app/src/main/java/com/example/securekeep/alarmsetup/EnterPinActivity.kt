@@ -17,15 +17,16 @@ import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
-import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.securekeep.MainActivity
+import com.example.securekeep.MyPreferences
 import com.example.securekeep.R
 import com.example.securekeep.databinding.ActivityEnterPinBinding
 
@@ -39,13 +40,16 @@ class EnterPinActivity : AppCompatActivity() {
     private var currentPin = ""
     private var isVibrate = false
     private var isFlash = false
+    private var isAlarmActive = false
     private var isAlarmServiceActive = false
+    var currentSoundLevel = 0
     private var mediaPlayer: MediaPlayer? = null
     private lateinit var cameraManager: CameraManager
     private lateinit var cameraId: String
     private lateinit var handler: Handler
     private lateinit var audioManager: AudioManager
     private lateinit var sharedPreferences: SharedPreferences
+    private lateinit var preferences: MyPreferences
 
     private val flashRunnable = object : Runnable {
         override fun run() {
@@ -54,6 +58,15 @@ class EnterPinActivity : AppCompatActivity() {
         }
     }
 
+    private val volumeCheckRunnable = object : Runnable {
+        override fun run() {
+            resetVolumeIfChanged()
+            handler.postDelayed(this, 1000) // Check every second
+        }
+    }
+
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -68,25 +81,29 @@ class EnterPinActivity : AppCompatActivity() {
         cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
         cameraId = cameraManager.cameraIdList[0] // Assuming back camera
         handler = Handler(Looper.getMainLooper())
-
+        preferences = MyPreferences(this@EnterPinActivity)
+        handler.post(volumeCheckRunnable)  // Start volume check task
 
         // Initialize SharedPreferences
         sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
         currentPin = sharedPreferences.getString("USER_PIN", "")!!
-        isVibrate = sharedPreferences.getBoolean("VibrateStatus", false)
-        isFlash = sharedPreferences.getBoolean("FlashStatus", false)
         isAlarmServiceActive = sharedPreferences.getBoolean("AlarmServiceStatus",false)
         // Retrieve sound level from shared preferences
-        val currentSoundLevel = sharedPreferences.getInt("SOUND_LEVEL", 70)
+        currentSoundLevel = sharedPreferences.getInt("SOUND_LEVEL", 70)
         setSystemSoundLevel(currentSoundLevel)
-
-        pinDots = arrayOf(
-            binding.pinDot1, binding.pinDot2, binding.pinDot3, binding.pinDot4
-        )
 
         // Retrieve the saved tone
         val toneId = sharedPreferences.getInt("alarm_tone", R.raw.alarm_tune_1)
         mediaPlayer = MediaPlayer.create(this, toneId)
+
+        val intent = intent
+        isAlarmActive = intent.getBooleanExtra("Alarm", false)
+        isVibrate = intent.getBooleanExtra("Vibrate", false)
+        isFlash = intent.getBooleanExtra("Flash", false)
+
+        pinDots = arrayOf(
+            binding.pinDot1, binding.pinDot2, binding.pinDot3, binding.pinDot4
+        )
 
         if (isAlarmServiceActive) {
             stopAlarmService()
@@ -175,9 +192,8 @@ class EnterPinActivity : AppCompatActivity() {
         mediaPlayer?.apply {
             if (!isPlaying) {
                 start()
-            } else {
-                seekTo(0) // Reset to the beginning if already playing
             }
+            isLooping = true // Set looping to true
         }
 
         if (isVibrate) {
@@ -190,11 +206,14 @@ class EnterPinActivity : AppCompatActivity() {
     }
 
     private fun stopAlarm() {
+        preferences.storePreferences()
+
         mediaPlayer?.apply {
             if (isPlaying) {
                 stop()
                 prepare() // Prepare the MediaPlayer for future use
             }
+            isLooping = false // Set looping to false
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -278,6 +297,8 @@ class EnterPinActivity : AppCompatActivity() {
 
     private fun startAlarmService() {
         val serviceIntent = Intent(this, AlarmService::class.java)
+        serviceIntent.putExtra("Flash", isFlash)
+        serviceIntent.putExtra("Vibrate", isVibrate)
         ContextCompat.startForegroundService(this, serviceIntent)
     }
 
@@ -285,4 +306,17 @@ class EnterPinActivity : AppCompatActivity() {
         val serviceIntent = Intent(this, AlarmService::class.java)
         stopService(serviceIntent)
     }
+
+    private fun resetVolumeIfChanged() {
+        currentSoundLevel = sharedPreferences.getInt("SOUND_LEVEL", 70)
+        val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+        val preferredVolume = (currentSoundLevel * maxVolume) / 100
+        val currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+
+        if (currentVolume != preferredVolume) {
+            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, preferredVolume, 0)
+        }
+    }
+
+
 }

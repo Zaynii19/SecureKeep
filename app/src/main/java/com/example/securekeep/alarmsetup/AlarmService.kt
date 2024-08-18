@@ -26,6 +26,7 @@ class AlarmService : Service() {
     private lateinit var wakeLock: PowerManager.WakeLock
     private var isVibrate = false
     private var isFlash = false
+    private var isAlarmActive = false
     private var mediaPlayer: MediaPlayer? = null
     private lateinit var cameraManager: CameraManager
     private lateinit var cameraId: String
@@ -43,8 +44,6 @@ class AlarmService : Service() {
     override fun onCreate() {
         super.onCreate()
         sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
-        isFlash = sharedPreferences.getBoolean("FlashStatus", false)
-        isVibrate = sharedPreferences.getBoolean("VibrateStatus", false)
         val currentSoundLevel = sharedPreferences.getInt("SOUND_LEVEL", 70)
 
         cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
@@ -60,13 +59,19 @@ class AlarmService : Service() {
 
         mediaPlayer = MediaPlayer.create(this, sharedPreferences.getInt("alarm_tone", R.raw.alarm_tune_1))
         setSystemSoundLevel(currentSoundLevel)
-        startForegroundService()
         acquireWakeLock()
-        startAlarm()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // No additional handling needed for notification clicks in this method
+        intent?.let {
+            isVibrate = it.getBooleanExtra("Vibrate", false)
+            isFlash = it.getBooleanExtra("Flash", false)
+            isAlarmActive = it.getBooleanExtra("Alarm", false)
+        }
+
+        startForegroundService()
+        startAlarm()
+
         return START_NOT_STICKY
     }
 
@@ -85,6 +90,9 @@ class AlarmService : Service() {
     private fun startForegroundService() {
         // Intent to launch EnterPinActivity when the notification is clicked
         val intent = Intent(this, EnterPinActivity::class.java).apply {
+            putExtra("Vibrate", isVibrate)
+            putExtra("Flash", isFlash)
+            putExtra("Alarm", isAlarmActive)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         }
         val pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)

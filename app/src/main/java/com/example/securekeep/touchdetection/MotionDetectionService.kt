@@ -1,5 +1,6 @@
 package com.example.securekeep.touchdetection
 
+import android.app.ActivityManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
@@ -13,7 +14,6 @@ import android.hardware.SensorManager
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
-import android.app.ActivityManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.securekeep.R
@@ -32,6 +32,9 @@ class MotionDetectionService : Service(), SensorEventListener {
     private lateinit var sharedPreferences: SharedPreferences
     private lateinit var powerManager: PowerManager
     private lateinit var activityManager: ActivityManager
+    private var isVibrate = false
+    private var isFlash = false
+    private var isAlarmActive = false
 
     override fun onCreate() {
         super.onCreate()
@@ -49,6 +52,13 @@ class MotionDetectionService : Service(), SensorEventListener {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI)
+
+        intent?.let {
+            isVibrate = it.getBooleanExtra("Vibrate", false)
+            isFlash = it.getBooleanExtra("Flash", false)
+            isAlarmActive = it.getBooleanExtra("Alarm", false)
+        }
+
         return START_STICKY
     }
 
@@ -78,9 +88,13 @@ class MotionDetectionService : Service(), SensorEventListener {
 
                 if (isScreenOn && appInForeground) {
                     // Start activity if the screen is on and app is in the foreground
-                    startActivity(Intent(this, EnterPinActivity::class.java).apply {
+                    val intent = Intent(this, EnterPinActivity::class.java).apply {
                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    })
+                        putExtra("Vibrate", isVibrate)
+                        putExtra("Flash", isFlash)
+                        putExtra("Alarm", isAlarmActive)
+                    }
+                    startActivity(intent)
                 } else {
                     // Start alarm service if the screen is off or app is closed
                     startAlarmService()
@@ -121,6 +135,9 @@ class MotionDetectionService : Service(), SensorEventListener {
 
     private fun startAlarmService() {
         val intent = Intent(this, AlarmService::class.java)
+        intent.putExtra("Vibrate", isVibrate)
+        intent.putExtra("Flash", isFlash)
+        intent.putExtra("Alarm", isAlarmActive)
         startService(intent)
     }
 

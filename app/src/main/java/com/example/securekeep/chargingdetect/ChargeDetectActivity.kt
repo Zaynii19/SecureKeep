@@ -39,9 +39,9 @@ class ChargeDetectActivity : AppCompatActivity() {
 
         // Retrieving selected attempts, alert status
         sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
-        isAlarmActive = sharedPreferences.getBoolean("AlarmStatus", false)
-        isVibrate = sharedPreferences.getBoolean("VibrateStatus", false)
-        isFlash = sharedPreferences.getBoolean("FlashStatus", false)
+        isAlarmActive = sharedPreferences.getBoolean("AlarmStatusCharge", false)
+        isVibrate = sharedPreferences.getBoolean("VibrateStatusCharge", false)
+        isFlash = sharedPreferences.getBoolean("FlashStatusCharge", false)
 
         updateUI()
 
@@ -88,6 +88,10 @@ class ChargeDetectActivity : AppCompatActivity() {
                             Toast.makeText(this@ChargeDetectActivity, "Charging Detection Mode Activated", Toast.LENGTH_SHORT).show()
                             updateUI()
                             startChargingDetectionService()
+                            // Storing alarm status value in shared preferences
+                            val editor = sharedPreferences.edit()
+                            editor.putBoolean("AlarmStatusCharge", isAlarmActive)
+                            editor.apply()
                         }
                     }.start()
                 } else {
@@ -105,7 +109,7 @@ class ChargeDetectActivity : AppCompatActivity() {
 
             // Storing vibrate status value in shared preferences
             val editor = sharedPreferences.edit()
-            editor.putBoolean("VibrateStatus", isFlash)
+            editor.putBoolean("VibrateStatusCharge", isFlash)
             editor.apply()
         }
 
@@ -116,7 +120,7 @@ class ChargeDetectActivity : AppCompatActivity() {
 
             // Storing flash status value in shared preferences
             val editor = sharedPreferences.edit()
-            editor.putBoolean("FlashStatus", isFlash)
+            editor.putBoolean("FlashStatusCharge", isFlash)
             editor.apply()
         }
     }
@@ -150,9 +154,9 @@ class ChargeDetectActivity : AppCompatActivity() {
 
         // Storing alarm status value in shared preferences
         val editor = sharedPreferences.edit()
-        editor.putBoolean("AlarmStatus", isAlarmActive)
-        editor.putBoolean("FlashStatus", isFlash)
-        editor.putBoolean("VibrateStatus", isVibrate)
+        editor.putBoolean("AlarmStatusCharge", isAlarmActive)
+        editor.putBoolean("FlashStatusCharge", isFlash)
+        editor.putBoolean("VibrateStatusCharge", isVibrate)
         editor.apply()
 
         stopChargingDetectionService()
@@ -160,13 +164,21 @@ class ChargeDetectActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Check if the alarm service is active when the activity resumes
-        val isAlarmServiceActive = sharedPreferences.getBoolean("AlarmServiceStatus",false)
+        val isAlarmServiceActive = sharedPreferences.getBoolean("AlarmServiceStatus", false)
+        isAlarmActive = sharedPreferences.getBoolean("AlarmStatusCharge", false)
+        isFlash = sharedPreferences.getBoolean("FlashStatusCharge", false)
+        isVibrate = sharedPreferences.getBoolean("VibrateStatusCharge", false)
 
         if (isAlarmServiceActive) {
-            // Start EnterPinActivity if the alarm is active
-            startActivity(Intent(this, EnterPinActivity::class.java))
-            finish() // Optionally finish this activity if you want to prevent the user from returning to it
+            // Create a new intent with the necessary extras
+            val intent = Intent(this, EnterPinActivity::class.java).apply {
+                putExtra("Alarm", isAlarmActive)
+                putExtra("Flash", isFlash)
+                putExtra("Vibrate", isVibrate)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            }
+            startActivity(intent)
+            finish() // Finish this activity to prevent returning to it
         }
     }
 
@@ -178,6 +190,9 @@ class ChargeDetectActivity : AppCompatActivity() {
 
     private fun startChargingDetectionService() {
         val serviceIntent = Intent(this, ChargingDetectionService::class.java)
+        serviceIntent.putExtra("Alarm", isAlarmActive)
+        serviceIntent.putExtra("Flash", isFlash)
+        serviceIntent.putExtra("Vibrate", isVibrate)
         startForegroundService(serviceIntent)
     }
 

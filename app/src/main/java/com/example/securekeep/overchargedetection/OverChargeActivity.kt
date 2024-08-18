@@ -37,9 +37,9 @@ class OverChargeActivity : AppCompatActivity() {
 
         // Retrieving selected attempts, alert status
         sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
-        isAlarmActive = sharedPreferences.getBoolean("AlarmStatus", false)
-        isVibrate = sharedPreferences.getBoolean("VibrateStatus", false)
-        isFlash = sharedPreferences.getBoolean("FlashStatus", false)
+        isAlarmActive = sharedPreferences.getBoolean("AlarmStatusOverCharge", false)
+        isVibrate = sharedPreferences.getBoolean("VibrateStatusOverCharge", false)
+        isFlash = sharedPreferences.getBoolean("FlashStatusOverCharge", false)
 
         updateUI()
 
@@ -74,6 +74,10 @@ class OverChargeActivity : AppCompatActivity() {
                         Toast.makeText(this@OverChargeActivity, "Battery Detection Mode Activated", Toast.LENGTH_SHORT).show()
                         updateUI()
                         startBatteryDetectionService()
+                        // Storing alarm status value in shared preferences
+                        val editor = sharedPreferences.edit()
+                        editor.putBoolean("AlarmStatusOverCharge", isAlarmActive)
+                        editor.apply()
                     }
                 }.start()
             } else {
@@ -88,7 +92,7 @@ class OverChargeActivity : AppCompatActivity() {
 
             // Storing vibrate status value in shared preferences
             val editor = sharedPreferences.edit()
-            editor.putBoolean("VibrateStatus", isFlash)
+            editor.putBoolean("VibrateStatusOverCharge", isFlash)
             editor.apply()
         }
 
@@ -99,7 +103,7 @@ class OverChargeActivity : AppCompatActivity() {
 
             // Storing flash status value in shared preferences
             val editor = sharedPreferences.edit()
-            editor.putBoolean("FlashStatus", isFlash)
+            editor.putBoolean("FlashStatusOverCharge", isFlash)
             editor.apply()
         }
     }
@@ -119,13 +123,21 @@ class OverChargeActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Check if the alarm service is active when the activity resumes
-        val isAlarmServiceActive = sharedPreferences.getBoolean("AlarmServiceStatus",false)
+        val isAlarmServiceActive = sharedPreferences.getBoolean("AlarmServiceStatus", false)
+        isAlarmActive = sharedPreferences.getBoolean("AlarmStatusOverCharge", false)
+        isFlash = sharedPreferences.getBoolean("FlashStatusOverCharge", false)
+        isVibrate = sharedPreferences.getBoolean("VibrateStatusOverCharge", false)
 
         if (isAlarmServiceActive) {
-            // Start EnterPinActivity if the alarm is active
-            startActivity(Intent(this, EnterPinActivity::class.java))
-            finish() // Optionally finish this activity if you want to prevent the user from returning to it
+            // Create a new intent with the necessary extras
+            val intent = Intent(this, EnterPinActivity::class.java).apply {
+                putExtra("Alarm", isAlarmActive)
+                putExtra("Flash", isFlash)
+                putExtra("Vibrate", isVibrate)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            }
+            startActivity(intent)
+            finish() // Finish this activity to prevent returning to it
         }
     }
 
@@ -145,9 +157,9 @@ class OverChargeActivity : AppCompatActivity() {
 
         // Storing alarm status value in shared preferences
         val editor = sharedPreferences.edit()
-        editor.putBoolean("AlarmStatus", isAlarmActive)
-        editor.putBoolean("FlashStatus", isFlash)
-        editor.putBoolean("VibrateStatus", isVibrate)
+        editor.putBoolean("AlarmStatusOverCharge", isAlarmActive)
+        editor.putBoolean("FlashStatusOverCharge", isFlash)
+        editor.putBoolean("VibrateStatusTouch", isVibrate)
         editor.apply()
 
         stopBatteryDetectionService()
@@ -155,6 +167,9 @@ class OverChargeActivity : AppCompatActivity() {
 
     private fun startBatteryDetectionService() {
         val serviceIntent = Intent(this, BatteryDetectionService::class.java)
+        serviceIntent.putExtra("Alarm", isAlarmActive)
+        serviceIntent.putExtra("Flash", isFlash)
+        serviceIntent.putExtra("Vibrate", isVibrate)
         startForegroundService(serviceIntent)
     }
 

@@ -4,19 +4,17 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.ImageFormat
 import android.graphics.SurfaceTexture
-import android.hardware.camera2.CameraAccessException
-import android.hardware.camera2.CameraCaptureSession
-import android.hardware.camera2.CameraCharacteristics
-import android.hardware.camera2.CameraDevice
-import android.hardware.camera2.CameraManager
-import android.hardware.camera2.CaptureRequest
-import android.hardware.camera2.TotalCaptureResult
+import android.hardware.camera2.*
+import android.media.Image
 import android.media.ImageReader
 import android.util.Log
 import android.view.Surface
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import java.io.File
+import java.io.FileOutputStream
+import java.nio.ByteBuffer
 
 @Suppress("DEPRECATION")
 class MyCameraManager(private val mContext: Context) {
@@ -60,13 +58,8 @@ class MyCameraManager(private val mContext: Context) {
             } ?: return
 
             // Check camera permission
-            if (ContextCompat.checkSelfPermission(
-                    mContext,
-                    Manifest.permission.CAMERA
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                // Request permission if not granted
-                // You should handle this request in the activity where the method is called
+            if (ContextCompat.checkSelfPermission(mContext, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                Log.e("CameraManager", "Camera permission not granted.")
                 return
             }
 
@@ -86,19 +79,15 @@ class MyCameraManager(private val mContext: Context) {
                 }
             }, null)
         } catch (e: CameraAccessException) {
-            if (e.reason == CameraAccessException.CAMERA_IN_USE) {
-                Log.e("CameraManager", "Camera is currently in use by another application")
-                // Handle the camera in use error, maybe retry or inform the user
-            } else {
-                e.printStackTrace()
-            }
+            Log.e("CameraManager", "Exception during camera initialization", e)
         }
     }
 
-    @SuppressLint("Recycle")
     private fun setupCameraOutputs() {
-        // Initialize the texture property
-        texture = SurfaceTexture(123)
+        // Initialize ImageReader for JPEG format
+        imageReader = ImageReader.newInstance(1920, 1080, ImageFormat.JPEG, 2)
+
+        texture = SurfaceTexture(0) // Use real texture ID
         texture.setDefaultBufferSize(1920, 1080)
 
         val surface = Surface(texture)
@@ -107,12 +96,16 @@ class MyCameraManager(private val mContext: Context) {
             val captureRequestBuilder = cameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE)
             captureRequestBuilder.addTarget(surface)
 
-            cameraDevice!!.createCaptureSession(listOf(surface), object : CameraCaptureSession.StateCallback() {
+            cameraDevice!!.createCaptureSession(listOf(surface, imageReader!!.surface), object : CameraCaptureSession.StateCallback() {
                 override fun onConfigured(session: CameraCaptureSession) {
                     captureSession = session
                     captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO)
-                    captureSession!!.setRepeatingRequest(captureRequestBuilder.build(), null, null)
-                    takePicture()
+                    try {
+                        captureSession!!.setRepeatingRequest(captureRequestBuilder.build(), null, null)
+                        takePicture()
+                    } catch (e: CameraAccessException) {
+                        Log.e("CameraManager", "Error starting repeating request", e)
+                    }
                 }
 
                 override fun onConfigureFailed(session: CameraCaptureSession) {
@@ -120,32 +113,48 @@ class MyCameraManager(private val mContext: Context) {
                 }
             }, null)
         } catch (e: CameraAccessException) {
-            e.printStackTrace()
+            Log.e("CameraManager", "Error setting up camera outputs", e)
         }
     }
 
     private fun takePicture() {
-        val captureRequestBuilder = cameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE)
-        captureRequestBuilder.addTarget(Surface(texture))
+        captureSession?.apply {
+            val captureRequestBuilder = cameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE)
+            captureRequestBuilder.addTarget(imageReader!!.surface)
 
-        try {
-            captureSession?.apply {
+            captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO)
+
+            try {
                 stopRepeating()
-                abortCaptures()
                 capture(captureRequestBuilder.build(), object : CameraCaptureSession.CaptureCallback() {
                     override fun onCaptureCompleted(session: CameraCaptureSession, request: CaptureRequest, result: TotalCaptureResult) {
                         super.onCaptureCompleted(session, request, result)
-                        savePicture()
+                        imageReader?.acquireLatestImage()?.let { image ->
+                            savePicture(image)
+                            image.close() // Always close the image
+                        }
                     }
                 }, null)
+            } catch (e: CameraAccessException) {
+                Log.e("CameraManager", "Error during capture", e)
             }
-        } catch (e: CameraAccessException) {
-            e.printStackTrace()
         }
     }
 
-    private fun savePicture() {
-        // Add code to save picture here
+    private fun savePicture(image: Image) {
+        val buffer: ByteBuffer = image.planes[0].buffer
+        val bytes = ByteArray(buffer.remaining())
+        buffer.get(bytes)
+
+        try {
+            val file = File(mContext.getExternalFilesDir(null), "photo.jpg") // Change path as needed
+            FileOutputStream(file).use { output ->
+                output.write(bytes)
+            }
+            Log.d("CameraManager", "Photo saved: ${file.absolutePath}")
+        } catch (e: Exception) {
+            Log.e("CameraManager", "Error saving photo", e)
+        }
     }
 
     private fun closeCamera() {
@@ -158,6 +167,7 @@ class MyCameraManager(private val mContext: Context) {
     companion object {
         @SuppressLint("StaticFieldLeak")
         private var mManager: MyCameraManager? = null
+
         fun getInstance(context: Context): MyCameraManager {
             if (mManager == null) mManager = MyCameraManager(context)
             return mManager!!

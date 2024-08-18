@@ -4,6 +4,7 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
@@ -12,7 +13,6 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.securekeep.R
-import com.example.securekeep.alarmsetup.AlarmService
 import com.example.securekeep.alarmsetup.EnterPinActivity
 import com.example.securekeep.databinding.ActivityAntiPocketBinding
 import com.example.securekeep.settings.SettingActivity
@@ -40,9 +40,9 @@ class AntiPocketActivity : AppCompatActivity() {
 
         // Retrieving selected attempts, alert status
         sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
-        isAlarmActive = sharedPreferences.getBoolean("AlarmStatus", false)
-        isVibrate = sharedPreferences.getBoolean("VibrateStatus", false)
-        isFlash = sharedPreferences.getBoolean("FlashStatus", false)
+        isAlarmActive = sharedPreferences.getBoolean("AlarmStatusPocket", false)
+        isVibrate = sharedPreferences.getBoolean("VibrateStatusPocket", false)
+        isFlash = sharedPreferences.getBoolean("FlashStatusPocket", false)
 
         updateUI()
 
@@ -77,6 +77,10 @@ class AntiPocketActivity : AppCompatActivity() {
                         Toast.makeText(this@AntiPocketActivity, "Anti Pocket Mode Activated", Toast.LENGTH_SHORT).show()
                         updateUI()
                         startProximityDetectionService()
+                        // Storing alarm status value in shared preferences
+                        val editor = sharedPreferences.edit()
+                        editor.putBoolean("AlarmStatusPocket", isAlarmActive)
+                        editor.apply()
                     }
                 }.start()
             } else {
@@ -90,8 +94,8 @@ class AntiPocketActivity : AppCompatActivity() {
             Toast.makeText(this, if (isVibrate) "Vibration Enabled" else "Vibration Disabled", Toast.LENGTH_SHORT).show()
 
             // Storing vibrate status value in shared preferences
-            val editor = getSharedPreferences("AlarmPrefs", MODE_PRIVATE).edit()
-            editor.putBoolean("VibrateStatus", isVibrate)
+            val editor = sharedPreferences.edit()
+            editor.putBoolean("VibrateStatusPocket", isVibrate)
             editor.apply()
         }
 
@@ -101,8 +105,8 @@ class AntiPocketActivity : AppCompatActivity() {
             Toast.makeText(this, if (isFlash) "Flash Turned on" else "Flash Turned off", Toast.LENGTH_SHORT).show()
 
             // Storing flash status value in shared preferences
-            val editor = getSharedPreferences("AlarmPrefs", MODE_PRIVATE).edit()
-            editor.putBoolean("FlashStatus", isFlash)
+            val editor = sharedPreferences.edit()
+            editor.putBoolean("FlashStatusPocket", isFlash)
             editor.apply()
         }
     }
@@ -122,13 +126,23 @@ class AntiPocketActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Check if the alarm service is active when the activity resumes
-        val isAlarmServiceActive = sharedPreferences.getBoolean("AlarmServiceStatus",false)
+        val isAlarmServiceActive = sharedPreferences.getBoolean("AlarmServiceStatus", false)
+        isAlarmActive = sharedPreferences.getBoolean("AlarmStatusPocket", false)
+        isFlash = sharedPreferences.getBoolean("FlashStatusPocket", false)
+        isVibrate = sharedPreferences.getBoolean("VibrateStatusPocket", false)
+
+        Log.d("PocketActivity", "onResume: Alarm: $isAlarmActive, Flash: $isFlash, Vibrate: $isVibrate")
 
         if (isAlarmServiceActive) {
-            // Start EnterPinActivity if the alarm is active
-            startActivity(Intent(this, EnterPinActivity::class.java))
-            finish() // Optionally finish this activity if you want to prevent the user from returning to it
+            // Create a new intent with the necessary extras
+            val intent = Intent(this, EnterPinActivity::class.java).apply {
+                putExtra("Alarm", isAlarmActive)
+                putExtra("Flash", isFlash)
+                putExtra("Vibrate", isVibrate)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            }
+            startActivity(intent)
+            finish() // Finish this activity to prevent returning to it
         }
     }
 
@@ -148,9 +162,9 @@ class AntiPocketActivity : AppCompatActivity() {
 
         // Storing alarm status value in shared preferences
         val editor = sharedPreferences.edit()
-        editor.putBoolean("AlarmStatus", isAlarmActive)
-        editor.putBoolean("FlashStatus", isFlash)
-        editor.putBoolean("VibrateStatus", isVibrate)
+        editor.putBoolean("AlarmStatusPocket", isAlarmActive)
+        editor.putBoolean("FlashStatusPocket", isFlash)
+        editor.putBoolean("VibrateStatusPocket", isVibrate)
         editor.apply()
 
         stopProximityDetectionService()
@@ -159,6 +173,9 @@ class AntiPocketActivity : AppCompatActivity() {
 
     private fun startProximityDetectionService() {
         val serviceIntent = Intent(this, ProximityDetectionService::class.java)
+        serviceIntent.putExtra("Alarm", isAlarmActive)
+        serviceIntent.putExtra("Flash", isFlash)
+        serviceIntent.putExtra("Vibrate", isVibrate)
         ContextCompat.startForegroundService(this, serviceIntent)
     }
 

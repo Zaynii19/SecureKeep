@@ -22,6 +22,9 @@ class BatteryDetectionService : Service() {
     private var isAlarmTriggered = false
     private lateinit var powerManager: PowerManager
     private lateinit var activityManager: ActivityManager
+    private var isVibrate = false
+    private var isFlash = false
+    private var isAlarmActive = false
     private val batteryReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             val action = intent.action
@@ -53,6 +56,12 @@ class BatteryDetectionService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val filter = IntentFilter(Intent.ACTION_BATTERY_CHANGED)
         registerReceiver(batteryReceiver, filter)
+
+        intent?.let {
+            isVibrate = it.getBooleanExtra("Vibrate", false)
+            isFlash = it.getBooleanExtra("Flash", false)
+            isAlarmActive = it.getBooleanExtra("Alarm", false)
+        }
 
         return START_STICKY
     }
@@ -89,6 +98,9 @@ class BatteryDetectionService : Service() {
             if (isScreenOn && appInForeground) {
                 // Start activity if the screen is on and app is in the foreground
                 startActivity(Intent(this, EnterPinActivity::class.java).apply {
+                    putExtra("Vibrate", isVibrate)
+                    putExtra("Flash", isFlash)
+                    putExtra("Alarm", isAlarmActive)
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 })
             } else {
@@ -120,6 +132,9 @@ class BatteryDetectionService : Service() {
 
     private fun startAlarmService() {
         val intent = Intent(this, AlarmService::class.java)
+        intent.putExtra("Vibrate", isVibrate)
+        intent.putExtra("Flash", isFlash)
+        intent.putExtra("Alarm", isAlarmActive)
         startService(intent)
     }
 }

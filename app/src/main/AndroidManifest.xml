@@ -15,17 +15,15 @@
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.SENSOR"/>
+    <uses-permission android:name="android.permission.CAMERA"/>
 
     <!-- Scoped Storage Permissions -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"
-        android:maxSdkVersion="34" />
-    <uses-permission android:name="android.permission.WRITE_MEDIA_VISUAL_USER_SELECTED"
         android:maxSdkVersion="34" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
@@ -33,13 +31,10 @@
         android:maxSdkVersion="32" />
 
     <!-- Foreground Service Permissions for API 34+ -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA"
-        android:required="false" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
-
-
 
     <!-- Camera Features -->
     <uses-feature android:name="android.hardware.camera.flash" />
@@ -78,24 +73,30 @@
         </activity>
         <activity android:name=".MainActivity" android:exported="true" />
 
-        <!-- Services -->
-        <service android:name=".intruderdetection.CameraService"
-            android:enabled="true"
-            android:exported="true"
-            android:foregroundServiceType="camera">
-            <intent-filter>
-                <action android:name="android.intent.action.MEDIA_PROJECTION" />
-            </intent-filter>
-        </service>
-
         <!-- Receivers -->
-        <receiver android:name=".intruderdetection.MyDeviceAdminReceiver"
-            android:exported="true">
+        <receiver
+            android:name=".intruderdetection.MyDeviceAdminReceiver"
+            android:exported="true"
+            android:permission="android.permission.BIND_DEVICE_ADMIN">
+            <meta-data
+                android:name="android.app.device_admin"
+                android:resource="@xml/device_admin_rules" />
             <intent-filter>
-                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED"/>
-                <action android:name="android.app.action.DEVICE_ADMIN_DISABLE_REQUESTED"/>
+                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
             </intent-filter>
         </receiver>
+
+        <!-- Services -->
+        <!--<service android:name=".intruderdetection.CameraService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="camera"/>-->
+
+        <!-- Services -->
+        <service android:name=".intruderdetection.CameraServiceTwo"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="camera"/>
 
         <service
             android:name=".touchdetection.MotionDetectionService"

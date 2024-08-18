@@ -6,15 +6,15 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.media.AudioManager
 import android.os.Build
 import android.os.IBinder
-import android.bluetooth.BluetoothDevice
-import android.content.pm.PackageManager
 import android.os.PowerManager
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
@@ -27,6 +27,9 @@ class EarphoneDetectionService : Service() {
     private var isAlarmTriggered = false
     private lateinit var activityManager: ActivityManager
     private lateinit var powerManager: PowerManager
+    private var isVibrate = false
+    private var isFlash = false
+    private var isAlarmActive = false
 
     private val audioReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -59,6 +62,13 @@ class EarphoneDetectionService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         registerReceivers()
+
+        intent?.let {
+            isVibrate = it.getBooleanExtra("Vibrate", false)
+            isFlash = it.getBooleanExtra("Flash", false)
+            isAlarmActive = it.getBooleanExtra("Alarm", false)
+        }
+
         return START_STICKY
     }
 
@@ -106,6 +116,9 @@ class EarphoneDetectionService : Service() {
             if (isScreenOn && appInForeground) {
                 // Start activity if the screen is on and app is in the foreground
                 startActivity(Intent(this, EnterPinActivity::class.java).apply {
+                    putExtra("Vibrate", isVibrate)
+                    putExtra("Flash", isFlash)
+                    putExtra("Alarm", isAlarmActive)
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 })
             } else {
@@ -128,6 +141,9 @@ class EarphoneDetectionService : Service() {
 
     private fun startAlarmService() {
         val intent = Intent(this, AlarmService::class.java)
+        intent.putExtra("Vibrate", isVibrate)
+        intent.putExtra("Flash", isFlash)
+        intent.putExtra("Alarm", isAlarmActive)
         startService(intent)
     }
 
