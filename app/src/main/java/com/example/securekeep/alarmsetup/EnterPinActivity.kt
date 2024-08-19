@@ -17,6 +17,7 @@ import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -42,13 +43,15 @@ class EnterPinActivity : AppCompatActivity() {
     private var isFlash = false
     private var isAlarmActive = false
     private var isAlarmServiceActive = false
-    var currentSoundLevel = 0
+    var fromPin = false
+    private var currentSoundLevel = 0
     private var mediaPlayer: MediaPlayer? = null
     private lateinit var cameraManager: CameraManager
     private lateinit var cameraId: String
     private lateinit var handler: Handler
     private lateinit var audioManager: AudioManager
     private lateinit var sharedPreferences: SharedPreferences
+    private lateinit var pinAlarmPreferences: SharedPreferences
     private lateinit var preferences: MyPreferences
 
     private val flashRunnable = object : Runnable {
@@ -85,6 +88,7 @@ class EnterPinActivity : AppCompatActivity() {
         handler.post(volumeCheckRunnable)  // Start volume check task
 
         // Initialize SharedPreferences
+        pinAlarmPreferences = getSharedPreferences("PinAlarmPreferences", MODE_PRIVATE)
         sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
         currentPin = sharedPreferences.getString("USER_PIN", "")!!
         isAlarmServiceActive = sharedPreferences.getBoolean("AlarmServiceStatus",false)
@@ -101,6 +105,9 @@ class EnterPinActivity : AppCompatActivity() {
         isVibrate = intent.getBooleanExtra("Vibrate", false)
         isFlash = intent.getBooleanExtra("Flash", false)
 
+        Log.d("PinActivity", "onCreate: Alarm: $isAlarmActive Flash: $isFlash Vibrate: $isVibrate")
+
+
         pinDots = arrayOf(
             binding.pinDot1, binding.pinDot2, binding.pinDot3, binding.pinDot4
         )
@@ -108,6 +115,8 @@ class EnterPinActivity : AppCompatActivity() {
         if (isAlarmServiceActive) {
             stopAlarmService()
         }
+
+        fromPin = false
 
         // Activate alarm
         triggerAlarm()
@@ -260,15 +269,27 @@ class EnterPinActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
+        fromPin = true
+
+        val editor = pinAlarmPreferences.edit()
+        editor.putBoolean("AlarmStatus", isAlarmActive)
+        editor.putBoolean("VibrateStatus", isVibrate)
+        editor.putBoolean("FlashStatus", isFlash)
+        editor.apply()
+
+        Log.d("PinActivity", "onPause: Alarm: $isAlarmActive Flash: $isFlash Vibrate: $isVibrate")
+
         stopAlarm()
         startAlarmService()
     }
 
     override fun onResume() {
         super.onResume()
-        if (isAlarmServiceActive) {
-            stopAlarmService()
-        }
+        val intent = intent
+        isAlarmActive = intent.getBooleanExtra("Alarm", false)
+        isVibrate = intent.getBooleanExtra("Vibrate", false)
+        isFlash = intent.getBooleanExtra("Flash", false)
+        stopAlarmService()
         triggerAlarm()
     }
 
@@ -296,9 +317,13 @@ class EnterPinActivity : AppCompatActivity() {
     }
 
     private fun startAlarmService() {
-        val serviceIntent = Intent(this, AlarmService::class.java)
-        serviceIntent.putExtra("Flash", isFlash)
-        serviceIntent.putExtra("Vibrate", isVibrate)
+        val serviceIntent = Intent(this, AlarmService::class.java).apply {
+            putExtra("Vibrate", isVibrate)
+            putExtra("Flash", isFlash)
+            putExtra("Alarm", isAlarmActive)
+            putExtra("FromPin", fromPin)  // Pass fromPin
+        }
+
         ContextCompat.startForegroundService(this, serviceIntent)
     }
 
@@ -318,5 +343,18 @@ class EnterPinActivity : AppCompatActivity() {
         }
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean("Alarm", isAlarmActive)
+        outState.putBoolean("Vibrate", isVibrate)
+        outState.putBoolean("Flash", isFlash)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        isAlarmActive = savedInstanceState.getBoolean("Alarm", false)
+        isVibrate = savedInstanceState.getBoolean("Vibrate", false)
+        isFlash = savedInstanceState.getBoolean("Flash", false)
+    }
 
 }

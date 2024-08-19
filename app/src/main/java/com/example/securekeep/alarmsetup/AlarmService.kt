@@ -17,6 +17,7 @@ import android.os.PowerManager
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.util.Log
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import com.example.securekeep.R
@@ -27,11 +28,14 @@ class AlarmService : Service() {
     private var isVibrate = false
     private var isFlash = false
     private var isAlarmActive = false
+    private var fromPin = false
+    private var currentSoundLevel = 0
     private var mediaPlayer: MediaPlayer? = null
     private lateinit var cameraManager: CameraManager
     private lateinit var cameraId: String
     private lateinit var handler: Handler
     private lateinit var sharedPreferences: SharedPreferences
+    private lateinit var pinAlarmPreferences: SharedPreferences
     private lateinit var powerManager: PowerManager
     private lateinit var audioManager: AudioManager
     private val flashRunnable = object : Runnable {
@@ -41,16 +45,25 @@ class AlarmService : Service() {
         }
     }
 
+    private val volumeCheckRunnable = object : Runnable {
+        override fun run() {
+            resetVolumeIfChanged()
+            handler.postDelayed(this, 1000) // Check every second
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
+        pinAlarmPreferences = getSharedPreferences("PinAlarmPreferences", MODE_PRIVATE)
         sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
-        val currentSoundLevel = sharedPreferences.getInt("SOUND_LEVEL", 70)
+        currentSoundLevel = sharedPreferences.getInt("SOUND_LEVEL", 70)
 
         cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
         cameraId = cameraManager.cameraIdList.firstOrNull() ?: return // Check for null
         audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
         powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
         handler = Handler()
+        handler.post(volumeCheckRunnable)  // Start volume check task
 
         val isAlarmServiceActive = true
         val editor = sharedPreferences.edit()
@@ -63,10 +76,21 @@ class AlarmService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        intent?.let {
+        intent.let {
+            fromPin = it!!.getBooleanExtra("FromPin", false)  // Retrieve fromPin
+        }
+        if (fromPin){
+            isAlarmActive = pinAlarmPreferences.getBoolean("AlarmStatus", false)
+            isFlash = pinAlarmPreferences.getBoolean("FlashStatus", false)
+            isVibrate = pinAlarmPreferences.getBoolean("VibrateStatus", false)
+
+            Log.d("AlarmService", "onStartCommand: FromPin: $fromPin Alarm: $isAlarmActive Flash: $isFlash Vibrate: $isVibrate")
+        }else intent?.let {
             isVibrate = it.getBooleanExtra("Vibrate", false)
             isFlash = it.getBooleanExtra("Flash", false)
             isAlarmActive = it.getBooleanExtra("Alarm", false)
+
+            Log.d("AlarmService", "onStartCommand2: Alarm: $isAlarmActive Flash: $isFlash Vibrate: $isVibrate")
         }
 
         startForegroundService()
@@ -115,9 +139,9 @@ class AlarmService : Service() {
         mediaPlayer?.apply {
             if (!isPlaying) {
                 start()
-            } else {
-                seekTo(0)
             }
+
+            isLooping = true // Set looping to true
         }
 
         if (isVibrate) {
@@ -135,6 +159,7 @@ class AlarmService : Service() {
                 stop()
                 prepare() // Prepare the MediaPlayer for future use
             }
+            isLooping = false // Set looping to false
         }
 
         // Cancel vibration
@@ -200,5 +225,16 @@ class AlarmService : Service() {
         val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
         val volume = (clampedLevel * maxVolume) / 100
         audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volume, 0) // Remove FLAG_SHOW_UI
+    }
+
+    private fun resetVolumeIfChanged() {
+        currentSoundLevel = sharedPreferences.getInt("SOUND_LEVEL", 70)
+        val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+        val preferredVolume = (currentSoundLevel * maxVolume) / 100
+        val currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+
+        if (currentVolume != preferredVolume) {
+            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, preferredVolume, 0)
+        }
     }
 }

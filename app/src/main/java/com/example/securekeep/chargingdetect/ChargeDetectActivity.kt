@@ -109,7 +109,7 @@ class ChargeDetectActivity : AppCompatActivity() {
 
             // Storing vibrate status value in shared preferences
             val editor = sharedPreferences.edit()
-            editor.putBoolean("VibrateStatusCharge", isFlash)
+            editor.putBoolean("VibrateStatusCharge", isVibrate)
             editor.apply()
         }
 

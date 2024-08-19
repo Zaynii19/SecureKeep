@@ -94,7 +94,7 @@ class TouchPhoneActivity : AppCompatActivity() {
 
             // Storing vibrate status value in shared preferences
             val editor = sharedPreferences.edit()
-            editor.putBoolean("VibrateStatusTouch", isFlash)
+            editor.putBoolean("VibrateStatusTouch", isVibrate)
             editor.apply()
         }
 

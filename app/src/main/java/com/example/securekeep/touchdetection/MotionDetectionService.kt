@@ -134,10 +134,12 @@ class MotionDetectionService : Service(), SensorEventListener {
     }
 
     private fun startAlarmService() {
-        val intent = Intent(this, AlarmService::class.java)
-        intent.putExtra("Vibrate", isVibrate)
-        intent.putExtra("Flash", isFlash)
-        intent.putExtra("Alarm", isAlarmActive)
+        val intent = Intent(this, AlarmService::class.java).apply {
+            putExtra("Vibrate", isVibrate)
+            putExtra("Flash", isFlash)
+            putExtra("Alarm", isAlarmActive)
+        }
+        Log.d("MotionService", "onSensorChanged: Alarm: $isAlarmActive Flash: $isFlash Vibrate: $isVibrate")
         startService(intent)
     }
 

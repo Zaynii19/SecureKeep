@@ -92,7 +92,7 @@ class OverChargeActivity : AppCompatActivity() {
 
             // Storing vibrate status value in shared preferences
             val editor = sharedPreferences.edit()
-            editor.putBoolean("VibrateStatusOverCharge", isFlash)
+            editor.putBoolean("VibrateStatusOverCharge", isVibrate)
             editor.apply()
         }
 

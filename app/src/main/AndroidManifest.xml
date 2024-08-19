@@ -86,14 +86,7 @@
             </intent-filter>
         </receiver>
 
-        <!-- Services -->
-        <!--<service android:name=".intruderdetection.CameraService"
-            android:enabled="true"
-            android:exported="false"
-            android:foregroundServiceType="camera"/>-->
-
-        <!-- Services -->
-        <service android:name=".intruderdetection.CameraServiceTwo"
+        <service android:name=".intruderdetection.CameraService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="camera"/>

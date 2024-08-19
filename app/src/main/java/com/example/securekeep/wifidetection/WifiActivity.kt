@@ -93,7 +93,7 @@ class WifiActivity : AppCompatActivity() {
 
             // Storing vibrate status value in shared preferences
             val editor = sharedPreferences.edit()
-            editor.putBoolean("VibrateStatusWifi", isFlash)
+            editor.putBoolean("VibrateStatusWifi", isVibrate)
             editor.apply()
         }
 
