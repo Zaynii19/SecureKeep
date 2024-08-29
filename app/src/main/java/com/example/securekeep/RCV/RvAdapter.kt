@@ -6,15 +6,15 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.*
+import androidx.recyclerview.widget.RecyclerView.Adapter
 import com.example.securekeep.antipocket.AntiPocketActivity
 import com.example.securekeep.chargingdetect.ChargeDetectActivity
+import com.example.securekeep.databinding.CatagoryItemsBinding
 import com.example.securekeep.earphonedetection.EarphonesActivity
-import com.example.securekeep.intruderdetection.IntruderActivity
+import com.example.securekeep.intruderdetection.PermissionActivity
 import com.example.securekeep.overchargedetection.OverChargeActivity
 import com.example.securekeep.touchdetection.TouchPhoneActivity
 import com.example.securekeep.wifidetection.WifiActivity
-import com.example.securekeep.databinding.CatagoryItemsBinding
 
 class RvAdapter(val context: Context, var catagoryList: ArrayList<RCVModel>): Adapter<RvAdapter.MyCatViewHolder>() {
     class MyCatViewHolder(val binding: CatagoryItemsBinding):RecyclerView.ViewHolder(binding.root) {
@@ -37,7 +37,7 @@ class RvAdapter(val context: Context, var catagoryList: ArrayList<RCVModel>): Ad
 
         holder.binding.categoryBtn.setOnClickListener {
             val intent = when (dataList.catText) {
-                "Intruder Alert" -> Intent(context, IntruderActivity::class.java)
+                "Intruder Alert" -> Intent(context, PermissionActivity::class.java)
                 "Don't Touch My Phone" -> Intent(context, TouchPhoneActivity::class.java)
                 "Anti Pocket Detection" -> Intent(context, AntiPocketActivity::class.java)
                 "Charging Detection" -> Intent(context, ChargeDetectActivity::class.java)
@@ -45,7 +45,7 @@ class RvAdapter(val context: Context, var catagoryList: ArrayList<RCVModel>): Ad
                 "Avoid Over Charging" -> Intent(context, OverChargeActivity::class.java)
                 "Earphones Detection" -> Intent(context, EarphonesActivity::class.java)
 
-                else -> Intent(context, IntruderActivity::class.java) // A default activity in case no match is found
+                else -> Intent(context, TouchPhoneActivity::class.java) // A default activity in case no match is found
             }
             ContextCompat.startActivity(context, intent, null)
         }

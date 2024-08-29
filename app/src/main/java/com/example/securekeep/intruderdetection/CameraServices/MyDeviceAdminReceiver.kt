@@ -1,4 +1,4 @@
-package com.example.securekeep.intruderdetection
+package com.example.securekeep.intruderdetection.CameraServices
 
 import android.app.admin.DeviceAdminReceiver
 import android.content.Context

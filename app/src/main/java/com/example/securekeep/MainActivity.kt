@@ -1,9 +1,11 @@
 package com.example.securekeep
 
+import android.Manifest
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.Toast
@@ -20,13 +22,11 @@ import com.example.securekeep.RCV.RvAdapter
 import com.example.securekeep.antipocket.AntiPocketActivity
 import com.example.securekeep.chargingdetect.ChargeDetectActivity
 import com.example.securekeep.databinding.ActivityMainBinding
-import com.example.securekeep.intruderdetection.IntruderActivity
-import com.example.securekeep.settings.SettingActivity
-import com.example.securekeep.touchdetection.TouchPhoneActivity
-import com.example.securekeep.wifidetection.WifiActivity
-import android.Manifest
-import android.os.Build
 import com.example.securekeep.earphonedetection.EarphonesActivity
+import com.example.securekeep.intruderdetection.IntruderActivity
+import com.example.securekeep.intruderdetection.PermissionActivity
+import com.example.securekeep.settings.SettingActivity
+import com.example.securekeep.wifidetection.WifiActivity
 
 class MainActivity : AppCompatActivity() {
     private val binding by lazy {
@@ -84,7 +84,7 @@ class MainActivity : AppCompatActivity() {
             when (it.itemId) {
                 R.id.wifiDetect -> startActivity(Intent(this, WifiActivity::class.java))
                 R.id.earphoneDetect -> startActivity(Intent(this, EarphonesActivity::class.java))
-                R.id.touchDetect -> startActivity(Intent(this, TouchPhoneActivity::class.java))
+                R.id.touchDetect -> startActivity(Intent(this, PermissionActivity::class.java))
                 R.id.intruder -> startActivity(Intent(this, IntruderActivity::class.java))
                 R.id.chargeDetect -> startActivity(Intent(this, ChargeDetectActivity::class.java))
                 R.id.pocketDetect -> startActivity(Intent(this, AntiPocketActivity::class.java))
