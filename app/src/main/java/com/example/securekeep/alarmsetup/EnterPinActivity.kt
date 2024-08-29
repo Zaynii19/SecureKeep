@@ -293,22 +293,6 @@ class EnterPinActivity : AppCompatActivity() {
         triggerAlarm()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        stopAlarm()
-        stopAlarmService()
-    }
-
-    override fun onBackPressed() {
-        if (enteredPin == currentPin) {
-            super.onBackPressed()
-            // Do nothing here to prevent default back button behavior
-        } else {
-            Toast.makeText(this, "PIN required to exit!", Toast.LENGTH_SHORT).show()
-            // Handle the case where the condition is not met
-        }
-    }
-
     private fun setSystemSoundLevel(level: Int) {
         val clampedLevel = level.coerceIn(0, 100)
         val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
@@ -355,6 +339,25 @@ class EnterPinActivity : AppCompatActivity() {
         isAlarmActive = savedInstanceState.getBoolean("Alarm", false)
         isVibrate = savedInstanceState.getBoolean("Vibrate", false)
         isFlash = savedInstanceState.getBoolean("Flash", false)
+    }
+    override fun onDestroy() {
+        super.onDestroy()
+        stopAlarm()
+        if (enteredPin == currentPin){
+            stopAlarmService()
+        }else{
+            startAlarmService()
+        }
+    }
+
+    override fun onBackPressed() {
+        if (enteredPin == currentPin) {
+            super.onBackPressed()
+            // Do nothing here to prevent default back button behavior
+        } else {
+            Toast.makeText(this, "PIN required to exit!", Toast.LENGTH_SHORT).show()
+            // Handle the case where the condition is not met
+        }
     }
 
 }

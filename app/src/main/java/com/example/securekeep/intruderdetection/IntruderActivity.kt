@@ -1,13 +1,11 @@
 package com.example.securekeep.intruderdetection
 
-import android.Manifest
 import android.app.ActivityManager
 import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
-import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
@@ -20,20 +18,20 @@ import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.example.securekeep.intruderdetection.CameraServices.MyDeviceAdminReceiver
 import com.example.securekeep.R
 import com.example.securekeep.databinding.ActivityIntruderBinding
+import com.example.securekeep.intruderdetection.IntruderServices.IntruderTrackingService
+import com.example.securekeep.intruderdetection.IntruderServices.MyDeviceAdminReceiver
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class IntruderActivity : AppCompatActivity() {
     private val binding by lazy {
         ActivityIntruderBinding.inflate(layoutInflater)
     }
-    //private var attemptThreshold = 2 // Default threshold value
-    //private var alertStatus = false
+    private var attemptThreshold = 2 // Default threshold value
+    private var alertStatus = false
     private var intruderServiceRunning = false
     private lateinit var alertDialog: AlertDialog
     private lateinit var devicePolicyManager: DevicePolicyManager
@@ -53,7 +51,7 @@ class IntruderActivity : AppCompatActivity() {
 
         devicePolicyManager = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
         compName = ComponentName(this, MyDeviceAdminReceiver::class.java)
-        sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
+        sharedPreferences = getSharedPreferences("IntruderPrefs", MODE_PRIVATE)
 
         // Check if the app is already a device admin
         if (!devicePolicyManager.isAdminActive(compName)) {
@@ -61,16 +59,14 @@ class IntruderActivity : AppCompatActivity() {
         }
 
         intruderServiceRunning = isIntruderServiceRunning()
-        Toast.makeText(this, "IntruderService: $intruderServiceRunning", Toast.LENGTH_SHORT).show()
-        saveAlertStatus()
-
 
         // Retrieving selected attempts and alert status
-        //attemptThreshold = sharedPreferences.getInt("AttemptThreshold", 2)
-        //binding.selectedAttempts.text = attemptThreshold.toString()
-        //
+        alertStatus = sharedPreferences.getBoolean("AlertStatus", false)
+        attemptThreshold = sharedPreferences.getInt("AttemptThreshold", 2)
+        binding.selectedAttempts.text = attemptThreshold.toString()
 
-        binding.pinAttemptSelector.setOnClickListener { showNumberPickerDialog() }
+
+        updatePowerButton()
 
         binding.infoBtn.setOnClickListener {
             MaterialAlertDialogBuilder(this)
@@ -81,53 +77,64 @@ class IntruderActivity : AppCompatActivity() {
                     show()
                     getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.GREEN)
                 }
+        }
 
-            alertDialog = AlertDialog.Builder(this)
-                .setTitle("Will Be Activated In 10 Seconds")
-                .setMessage("00:10")
-                .setCancelable(false)
-                .create()
+        binding.pinAttemptSelector.setOnClickListener { showNumberPickerDialog() }
 
-            updatePowerButton()
+        alertDialog = AlertDialog.Builder(this)
+            .setTitle("Will Be Activated In 10 Seconds")
+            .setMessage("00:10")
+            .setCancelable(false)
+            .create()
 
-            binding.powerBtn.setOnClickListener {
-                if (intruderServiceRunning) {
-                    stopBackgroundService()
-                    //alertStatus = false
-                    Toast.makeText(this, "Intruder Alert Mode Deactivated", Toast.LENGTH_SHORT).show()
-                    binding.powerBtn.setImageResource(R.drawable.power_on)
-                    binding.activateText.text = getString(R.string.tap_to_activate)
-                } else {
-                    alertDialog.show()
-                    //alertStatus = true
+        binding.powerBtn.setOnClickListener {
+            if (alertStatus && intruderServiceRunning) {
+                stopBackgroundService()
+                alertStatus = false
+                intruderServiceRunning = false
+                Toast.makeText(this, "Intruder Alert Mode Deactivated", Toast.LENGTH_SHORT).show()
+                binding.powerBtn.setImageResource(R.drawable.power_on)
+                binding.activateText.text = getString(R.string.tap_to_activate)
+                //Save the alert status in shared preferences
+                val editor = sharedPreferences.edit()
+                editor.putBoolean("AlertStatus", alertStatus)
+                editor.apply()
+            } else {
+                alertDialog.show()
+                alertStatus = true
+                intruderServiceRunning = true
 
-                    object : CountDownTimer(10000, 1000) {
-                        override fun onTick(millisUntilFinished: Long) {
-                            alertDialog.setMessage("00:${millisUntilFinished / 1000}")
-                        }
+                object : CountDownTimer(10000, 1000) {
+                    override fun onTick(millisUntilFinished: Long) {
+                        alertDialog.setMessage("00:${millisUntilFinished / 1000}")
+                    }
 
-                        override fun onFinish() {
-                            alertDialog.dismiss()
-                            Toast.makeText(this@IntruderActivity, "Intruder Alert Mode Activated", Toast.LENGTH_SHORT).show()
-                            binding.powerBtn.setImageResource(R.drawable.power_off)
-                            binding.activateText.text = getString(R.string.tap_to_deactivate)
+                    override fun onFinish() {
+                        alertDialog.dismiss()
+                        Toast.makeText(this@IntruderActivity, "Intruder Alert Mode Activated", Toast.LENGTH_SHORT).show()
+                        binding.powerBtn.setImageResource(R.drawable.power_off)
+                        binding.activateText.text = getString(R.string.tap_to_deactivate)
 
-                            startBackgroundService()
-                            // Save the alert status in shared preferences
-                            //saveAlertStatus()
-                        }
-                    }.start()
-                }
+                        startBackgroundService()
+                        //Save the alert status in shared preferences
+                        val editor = sharedPreferences.edit()
+                        editor.putBoolean("AlertStatus", alertStatus)
+                        editor.apply()
+                    }
+                }.start()
             }
+        }
+
+        binding.viewIntruderPic.setOnClickListener {
+            startActivity(Intent(this@IntruderActivity, IntruderSelfieActivity::class.java))
+            finish()
         }
     }
 
     override fun onResume() {
         super.onResume()
-        intruderServiceRunning = sharedPreferences.getBoolean("AlertStatusIntruder", false)
-        Toast.makeText(this, "IntruderService: $intruderServiceRunning", Toast.LENGTH_SHORT).show()
+        alertStatus = sharedPreferences.getBoolean("AlertStatus", false)
         updatePowerButton()
-
     }
 
     private fun requestDeviceAdmin() {
@@ -143,8 +150,7 @@ class IntruderActivity : AppCompatActivity() {
 
 
     private fun updatePowerButton() {
-        //if (alertStatus) {
-        if (intruderServiceRunning) {
+        if (alertStatus) {
             binding.powerBtn.setImageResource(R.drawable.power_off)
             binding.activateText.text = getString(R.string.tap_to_deactivate)
         } else {
@@ -166,12 +172,12 @@ class IntruderActivity : AppCompatActivity() {
             val selectedRadioButton = dialogView.findViewById<RadioButton>(checkedId)
             val selectedValue = selectedRadioButton.text.toString()
             binding.selectedAttempts.text = selectedValue
-            //attemptThreshold = selectedValue.toInt()
+            attemptThreshold = selectedValue.toInt()
 
             // Store attempt threshold in shared preferences
-            //val editor = sharedPreferences.edit()
-            //editor.putInt("AttemptThreshold", attemptThreshold)
-            //editor.apply()
+            val editor = sharedPreferences.edit()
+            editor.putInt("AttemptThreshold", attemptThreshold)
+            editor.apply()
 
             dialog.dismiss()
         }
@@ -179,68 +185,14 @@ class IntruderActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    private fun checkPermissionsForService(): Boolean {
-        // Android 14 and Above
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            val cameraPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-            val readStoragePermission = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES)
-            val notiPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-
-            return cameraPermission == PackageManager.PERMISSION_GRANTED &&
-                    readStoragePermission == PackageManager.PERMISSION_GRANTED &&
-                    notiPermission == PackageManager.PERMISSION_GRANTED
-        }
-        // Android 10 and less
-        else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q){
-            val cameraPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-            val readStoragePermission =    ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
-            val writeStoragePermission = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-
-            return cameraPermission == PackageManager.PERMISSION_GRANTED &&
-                    writeStoragePermission == PackageManager.PERMISSION_GRANTED &&
-                    readStoragePermission == PackageManager.PERMISSION_GRANTED
-        }
-        // Android 12 and less
-        else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            val cameraPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-            val readStoragePermission =    ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
-
-            return cameraPermission == PackageManager.PERMISSION_GRANTED &&
-                    readStoragePermission == PackageManager.PERMISSION_GRANTED
-        }
-        // Android 13
-        else{
-            val cameraPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-            val readStoragePermission = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES)
-
-            return cameraPermission == PackageManager.PERMISSION_GRANTED &&
-                    readStoragePermission == PackageManager.PERMISSION_GRANTED
-        }
-    }
-
     private fun startBackgroundService() {
-        if (!checkPermissionsForService()) {
-            Toast.makeText(this@IntruderActivity, "All Permissions are not Given", Toast.LENGTH_SHORT).show()
-        } else {
             Log.d("IntruderActivity", "startingBackgroundService ")
-            /*Intent(this, MagicServiceClass::class.java).also {
-                ContextCompat.startForegroundService(this, it)
-                cameraServiceRunning = true
-            }*/
-            intruderServiceRunning = true
-            saveAlertStatus()
-            startService(Intent(this@IntruderActivity, IntruderTrackingService::class.java)
-            )
-        }
+            //intruderServiceRunning = true
+            startService(Intent(this@IntruderActivity, IntruderTrackingService::class.java))
     }
 
     private fun stopBackgroundService() {
-        /*Intent(this, MagicServiceClass::class.java).also {
-            stopService(it)
-            cameraServiceRunning = false
-        }*/
-        intruderServiceRunning = false
-        saveAlertStatus()
+        //intruderServiceRunning = false
         stopService(Intent(this@IntruderActivity, IntruderTrackingService::class.java))
     }
 
@@ -252,15 +204,8 @@ class IntruderActivity : AppCompatActivity() {
             .any { it.service.className == IntruderTrackingService::class.java.name }
     }
 
-    private fun saveAlertStatus() {
-        val editor = sharedPreferences.edit()
-        editor.putBoolean("intruderServiceStatus", intruderServiceRunning)
-        editor.apply()
-    }
-
     companion object {
         private const val REQUEST_CODE_ENABLE_ADMIN = 1
-        //private const val PERMISSION_REQUEST_CODE = 101  // Unique code for permission requests
     }
 
     override fun onDestroy() {

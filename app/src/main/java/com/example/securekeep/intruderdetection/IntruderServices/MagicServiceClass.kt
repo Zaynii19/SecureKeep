@@ -1,4 +1,4 @@
-package com.example.securekeep.intruderdetection.CameraServices
+package com.example.securekeep.intruderdetection.IntruderServices
 
 import android.Manifest
 import android.app.NotificationChannel

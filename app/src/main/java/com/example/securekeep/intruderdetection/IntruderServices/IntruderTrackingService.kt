@@ -1,5 +1,6 @@
-package com.example.securekeep.intruderdetection
+package com.example.securekeep.intruderdetection.IntruderServices
 
+import android.app.KeyguardManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
@@ -7,19 +8,22 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.SharedPreferences
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import com.example.securekeep.intruderdetection.CameraServices.MagicServiceClass
 import com.example.securekeep.R
 
 class IntruderTrackingService : Service() {
     private var currentFailedAttempts = 0
-    private var attemptThreshold = 1
-    //private lateinit var sharedPreferences: SharedPreferences
+    private var attemptThreshold = 0
+    private lateinit var sharedPreferences: SharedPreferences
+    private lateinit var keyguardManager: KeyguardManager
+    private val handler = Handler()
 
     private val passwordAttemptReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -32,14 +36,27 @@ class IntruderTrackingService : Service() {
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate() {
         super.onCreate()
-        //sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
-        //attemptThreshold = sharedPreferences.getInt("AttemptThreshold", 2)
+        sharedPreferences = getSharedPreferences("IntruderPrefs", MODE_PRIVATE)
+        attemptThreshold = sharedPreferences.getInt("AttemptThreshold", 2)
+
+        keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
 
         // Register the BroadcastReceiver
         val filter = IntentFilter("PASSWORD_ATTEMPT_FAILED")
         registerReceiver(passwordAttemptReceiver, filter, RECEIVER_EXPORTED)
 
+        // Start checking for unlocks
+        checkUnlockStatus()
         startForegroundService()
+    }
+
+    private fun checkUnlockStatus() {
+        handler.postDelayed({
+            if (!keyguardManager.isKeyguardLocked) {
+                onCorrectPinAttempt()  // Reset if device is unlocked
+            }
+            checkUnlockStatus()  // Re-check periodically
+        }, 2000)  // Check every 2 seconds (you can adjust this interval)
     }
 
     private fun onWrongPinAttempt() {
@@ -48,6 +65,12 @@ class IntruderTrackingService : Service() {
         if (currentFailedAttempts >= attemptThreshold) {
             startMagicService()
         }
+    }
+
+    private fun onCorrectPinAttempt() {
+        // Reset failed attempts on successful password entry or device unlock
+        currentFailedAttempts = 0
+        Log.d("IntruderTrackingService", "Device unlocked. Resetting failed attempts.")
     }
 
     private fun startForegroundService() {

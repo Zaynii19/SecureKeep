@@ -1,4 +1,4 @@
-package com.example.securekeep.intruderdetection
+package com.example.securekeep.intruderdetection.IntruderHiddenCamera
 
 import android.graphics.Rect
 import android.view.View

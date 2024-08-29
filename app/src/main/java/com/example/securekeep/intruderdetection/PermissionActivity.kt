@@ -15,6 +15,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.example.securekeep.MainActivity
 import com.example.securekeep.R
 import com.example.securekeep.databinding.ActivityPermissionBinding
 
@@ -36,9 +37,13 @@ class PermissionActivity : AppCompatActivity() {
         // Request camera, storage, and other runtime permissions
         requestPermissions()
 
-        binding.textView.setOnClickListener {
-            startActivity(Intent(this, IntruderActivity::class.java))
-            finish()
+        binding.startBtn.setOnClickListener {
+            if (MainActivity.checkPermissionsForService(this)){
+                startActivity(Intent(this, IntruderActivity::class.java))
+                finish()
+            } else {
+                requestPermissions()
+            }
         }
     }
 

@@ -5,19 +5,25 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".intruderdetection.PermissionActivity"
-    android:background="#DEE4DE">
+    android:background="@color/app_background"
+    tools:context=".intruderdetection.FullPictureActivity">
 
-    <Button
-        android:id="@+id/startBtn"
-        android:layout_width="wrap_content"
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/let_s_get_start"
-        android:backgroundTint="#16C31D"
-        android:textSize="30sp"
-        android:textColor="@color/white"
+        android:layout_margin="@dimen/_20sdp"
+        app:cardCornerRadius="@dimen/_10sdp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/fullSelfie"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:srcCompat="@drawable/camera"
+            android:scaleType="fitCenter"/>
+    </androidx.cardview.widget.CardView>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

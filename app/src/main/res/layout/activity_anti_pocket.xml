@@ -239,7 +239,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/gridLayout"
-        android:background="#16C31D">
+        android:background="@drawable/green_round_boarder">
 
 
         <ImageView

@@ -1,8 +1,8 @@
 package com.example.securekeep
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -26,6 +26,7 @@ import com.example.securekeep.earphonedetection.EarphonesActivity
 import com.example.securekeep.intruderdetection.IntruderActivity
 import com.example.securekeep.intruderdetection.PermissionActivity
 import com.example.securekeep.settings.SettingActivity
+import com.example.securekeep.touchdetection.TouchPhoneActivity
 import com.example.securekeep.wifidetection.WifiActivity
 
 class MainActivity : AppCompatActivity() {
@@ -35,7 +36,6 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var toggle: ActionBarDrawerToggle
     private var categoryList = ArrayList<RCVModel>()
-    private lateinit var sharedPreferences: SharedPreferences
     private val requiredPermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         arrayOf(
             Manifest.permission.POST_NOTIFICATIONS,
@@ -61,8 +61,6 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
-        sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
-
         setupUI()
         requestNecessaryPermissions()  // Request only necessary permissions
         initializeCategoryList()
@@ -84,8 +82,14 @@ class MainActivity : AppCompatActivity() {
             when (it.itemId) {
                 R.id.wifiDetect -> startActivity(Intent(this, WifiActivity::class.java))
                 R.id.earphoneDetect -> startActivity(Intent(this, EarphonesActivity::class.java))
-                R.id.touchDetect -> startActivity(Intent(this, PermissionActivity::class.java))
-                R.id.intruder -> startActivity(Intent(this, IntruderActivity::class.java))
+                R.id.touchDetect -> startActivity(Intent(this, TouchPhoneActivity::class.java))
+                R.id.intruder ->
+                    if (checkPermissionsForService(this)) {
+                        startActivity(Intent(this, IntruderActivity::class.java))
+                    }
+                    else{
+                        startActivity(Intent(this, PermissionActivity::class.java))
+                    }
                 R.id.chargeDetect -> startActivity(Intent(this, ChargeDetectActivity::class.java))
                 R.id.pocketDetect -> startActivity(Intent(this, AntiPocketActivity::class.java))
             }
@@ -138,6 +142,47 @@ class MainActivity : AppCompatActivity() {
         categoryList.add(RCVModel(R.drawable.wifi, "Wifi Detection", "Alarm when someone try to on/off your wifi"))
         categoryList.add(RCVModel(R.drawable.battery, "Avoid Over Charging", "Alarm when battery is fully charged"))
         categoryList.add(RCVModel(R.drawable.headphone, "Earphones Detection", "Earphones detections"))
+    }
+
+    companion object {
+        fun checkPermissionsForService(context: Context): Boolean {
+            // Android 14 and Above
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                val cameraPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
+                val readStoragePermission = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_MEDIA_IMAGES)
+                val notiPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+
+                return cameraPermission == PackageManager.PERMISSION_GRANTED &&
+                        readStoragePermission == PackageManager.PERMISSION_GRANTED &&
+                        notiPermission == PackageManager.PERMISSION_GRANTED
+            }
+            // Android 10 and less
+            else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q){
+                val cameraPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
+                val readStoragePermission =    ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE)
+                val writeStoragePermission = ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+
+                return cameraPermission == PackageManager.PERMISSION_GRANTED &&
+                        writeStoragePermission == PackageManager.PERMISSION_GRANTED &&
+                        readStoragePermission == PackageManager.PERMISSION_GRANTED
+            }
+            // Android 12 and less
+            else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                val cameraPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
+                val readStoragePermission =    ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE)
+
+                return cameraPermission == PackageManager.PERMISSION_GRANTED &&
+                        readStoragePermission == PackageManager.PERMISSION_GRANTED
+            }
+            // Android 13
+            else{
+                val cameraPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
+                val readStoragePermission = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_MEDIA_IMAGES)
+
+                return cameraPermission == PackageManager.PERMISSION_GRANTED &&
+                        readStoragePermission == PackageManager.PERMISSION_GRANTED
+            }
+        }
     }
 }
 
