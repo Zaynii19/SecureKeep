@@ -12,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.example.securekeep.MainActivity
 import com.example.securekeep.R
 import com.example.securekeep.alarmsetup.EnterPinActivity
 import com.example.securekeep.databinding.ActivityAntiPocketBinding
@@ -26,6 +27,7 @@ class AntiPocketActivity : AppCompatActivity() {
     private var isAlarmActive = false
     private var isVibrate = false
     private var isFlash = false
+    private var isPocketServiceRunning = false
     private lateinit var sharedPreferences: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,6 +46,8 @@ class AntiPocketActivity : AppCompatActivity() {
         isVibrate = sharedPreferences.getBoolean("VibrateStatusPocket", false)
         isFlash = sharedPreferences.getBoolean("FlashStatusPocket", false)
 
+        isPocketServiceRunning = MainActivity.isServiceRunning(this@AntiPocketActivity, ProximityDetectionService::class.java)
+
         updateUI()
 
         binding.backBtn.setOnClickListener {
@@ -61,7 +65,7 @@ class AntiPocketActivity : AppCompatActivity() {
             .create()
 
         binding.powerBtn.setOnClickListener {
-            if (!isAlarmActive) {
+            if (!isAlarmActive && !isPocketServiceRunning) {
                 isAlarmActive = true
                 alertDialog.show()
 
@@ -172,6 +176,7 @@ class AntiPocketActivity : AppCompatActivity() {
 
 
     private fun startProximityDetectionService() {
+        isPocketServiceRunning = true
         val serviceIntent = Intent(this, ProximityDetectionService::class.java)
         serviceIntent.putExtra("Alarm", isAlarmActive)
         serviceIntent.putExtra("Flash", isFlash)
@@ -180,6 +185,7 @@ class AntiPocketActivity : AppCompatActivity() {
     }
 
     private fun stopProximityDetectionService() {
+        isPocketServiceRunning = false
         val serviceIntent = Intent(this, ProximityDetectionService::class.java)
         stopService(serviceIntent)
     }

@@ -12,6 +12,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.example.securekeep.MainActivity
 import com.example.securekeep.R
 import com.example.securekeep.alarmsetup.EnterPinActivity
 import com.example.securekeep.databinding.ActivityChargeDetectBinding
@@ -25,6 +26,7 @@ class ChargeDetectActivity : AppCompatActivity() {
     private var isAlarmActive = false
     private var isVibrate = false
     private var isFlash = false
+    private var isChargingServiceRunning = false
     private lateinit var sharedPreferences: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -42,6 +44,8 @@ class ChargeDetectActivity : AppCompatActivity() {
         isAlarmActive = sharedPreferences.getBoolean("AlarmStatusCharge", false)
         isVibrate = sharedPreferences.getBoolean("VibrateStatusCharge", false)
         isFlash = sharedPreferences.getBoolean("FlashStatusCharge", false)
+
+        isChargingServiceRunning = MainActivity.isServiceRunning(this@ChargeDetectActivity, ChargingDetectionService::class.java)
 
         updateUI()
 
@@ -72,7 +76,7 @@ class ChargeDetectActivity : AppCompatActivity() {
 
         binding.powerBtn.setOnClickListener {
             if (isChargerConnected()) {
-                if (!isAlarmActive) {
+                if (!isAlarmActive && !isChargingServiceRunning) {
                     isAlarmActive = true
                     alertDialog.show()
 
@@ -189,6 +193,7 @@ class ChargeDetectActivity : AppCompatActivity() {
     }
 
     private fun startChargingDetectionService() {
+        isChargingServiceRunning = true
         val serviceIntent = Intent(this, ChargingDetectionService::class.java)
         serviceIntent.putExtra("Alarm", isAlarmActive)
         serviceIntent.putExtra("Flash", isFlash)
@@ -197,6 +202,7 @@ class ChargeDetectActivity : AppCompatActivity() {
     }
 
     private fun stopChargingDetectionService() {
+        isChargingServiceRunning = false
         val serviceIntent = Intent(this, ChargingDetectionService::class.java)
         stopService(serviceIntent)
     }

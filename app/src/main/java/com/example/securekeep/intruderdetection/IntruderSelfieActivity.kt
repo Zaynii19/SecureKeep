@@ -1,5 +1,6 @@
 package com.example.securekeep.intruderdetection
 
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
@@ -35,8 +36,13 @@ class IntruderSelfieActivity : AppCompatActivity() {
             insets
         }
 
+        binding.backBtn.setOnClickListener {
+            startActivity(Intent(this@IntruderSelfieActivity, IntruderActivity::class.java))
+            finish()
+        }
+
         selfieList = mutableListOf() // Initialize the list
-        binding.rcv.layoutManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
+        binding.rcv.layoutManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL, true)
         selfieAdapter = SelfieAdapter(this, selfieList)
         binding.rcv.adapter = selfieAdapter
         binding.rcv.setHasFixedSize(true)

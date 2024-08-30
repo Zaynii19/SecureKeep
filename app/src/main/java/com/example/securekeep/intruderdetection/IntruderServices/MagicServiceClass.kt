@@ -3,6 +3,7 @@ package com.example.securekeep.intruderdetection.IntruderServices
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -28,6 +29,7 @@ import com.example.securekeep.intruderdetection.IntruderHiddenCamera.config.Came
 import com.example.securekeep.intruderdetection.IntruderHiddenCamera.config.CameraFocus
 import com.example.securekeep.intruderdetection.IntruderHiddenCamera.config.CameraImageFormat
 import com.example.securekeep.intruderdetection.IntruderHiddenCamera.config.CameraResolution
+import com.example.securekeep.intruderdetection.IntruderSelfieActivity
 import java.io.File
 import java.io.FileOutputStream
 import java.util.Random
@@ -71,6 +73,12 @@ class MagicServiceClass : HiddenCameraService() {
     }
 
     private fun startForegroundService() {
+        // Intent to launch EnterPinActivity when the notification is clicked
+        val intent = Intent(this, IntruderSelfieActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        }
+        val pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -82,10 +90,13 @@ class MagicServiceClass : HiddenCameraService() {
         }
 
         val notificationBuilder = NotificationCompat.Builder(this, "camera_channel")
-            .setContentTitle("Intruder Selfie")
-            .setContentText("Captured Intruder Selfie")
+            .setContentIntent(pendingIntent) // Perform action when clicked
+            .setContentTitle("Intruder Detected")
+            .setContentText("Someone has tried to unlock your phone, Click to view intruder photo")
             .setSmallIcon(R.drawable.info) // Replace with your own icon
-            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setAutoCancel(true) // Automatically remove notification when clicked
 
         val notification = notificationBuilder.build()
 

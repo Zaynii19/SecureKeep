@@ -17,6 +17,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.example.securekeep.MainActivity
 import com.example.securekeep.R
 import com.example.securekeep.alarmsetup.EnterPinActivity
 import com.example.securekeep.databinding.ActivityEarphonesBinding
@@ -30,6 +31,7 @@ class EarphonesActivity : AppCompatActivity() {
     private var isAlarmActive = false
     private var isVibrate = false
     private var isFlash = false
+    private var isEarphoneServiceRunning = false
     private lateinit var sharedPreferences: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,6 +49,9 @@ class EarphonesActivity : AppCompatActivity() {
         isAlarmActive = sharedPreferences.getBoolean("AlarmStatusEarphone", false)
         isVibrate = sharedPreferences.getBoolean("VibrateStatusEarphone", false)
         isFlash = sharedPreferences.getBoolean("FlashStatusEarphone", false)
+
+        isEarphoneServiceRunning = MainActivity.isServiceRunning(this@EarphonesActivity, EarphoneDetectionService::class.java)
+
 
         updateUI()
 
@@ -77,7 +82,7 @@ class EarphonesActivity : AppCompatActivity() {
 
         binding.powerBtn.setOnClickListener {
             if (isEarphonesConnected()) {
-                if (isAlarmActive) {
+                if (isAlarmActive && isEarphoneServiceRunning) {
                     stopEarphoneDetection()
                 } else {
                     isAlarmActive = true
@@ -209,6 +214,7 @@ class EarphonesActivity : AppCompatActivity() {
     }
 
     private fun startEarphoneDetectionService() {
+        isEarphoneServiceRunning = true
         val intent = Intent(this, EarphoneDetectionService::class.java)
         intent.putExtra("Alarm", isAlarmActive)
         intent.putExtra("Flash", isFlash)
@@ -217,6 +223,7 @@ class EarphonesActivity : AppCompatActivity() {
     }
 
     private fun stopEarphoneDetectionService() {
+        isEarphoneServiceRunning = false
         val intent = Intent(this, EarphoneDetectionService::class.java)
         stopService(intent)
     }

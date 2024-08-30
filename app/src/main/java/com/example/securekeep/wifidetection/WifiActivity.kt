@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.example.securekeep.MainActivity
 import com.example.securekeep.R
 import com.example.securekeep.alarmsetup.EnterPinActivity
 import com.example.securekeep.databinding.ActivityWifiBinding
@@ -24,6 +25,7 @@ class WifiActivity : AppCompatActivity() {
     private var isAlarmActive = false
     private var isVibrate = false
     private var isFlash = false
+    private var isWifiServiceRunning = false
     private lateinit var sharedPreferences: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -42,6 +44,8 @@ class WifiActivity : AppCompatActivity() {
         isVibrate = sharedPreferences.getBoolean("VibrateStatusWifi", false)
         isFlash = sharedPreferences.getBoolean("FlashStatusWifi", false)
 
+        isWifiServiceRunning = MainActivity.isServiceRunning(this@WifiActivity, WifiDetectionService::class.java)
+
         updateUI()
 
         binding.backBtn.setOnClickListener {
@@ -59,7 +63,7 @@ class WifiActivity : AppCompatActivity() {
             .create()
 
         binding.powerBtn.setOnClickListener {
-            if (!isAlarmActive) {
+            if (!isAlarmActive && !isWifiServiceRunning) {
                 isAlarmActive = true
                 alertDialog.show()
 
@@ -167,6 +171,7 @@ class WifiActivity : AppCompatActivity() {
     }
 
     private fun startWifiDetectionService() {
+        isWifiServiceRunning = true
         val serviceIntent = Intent(this, WifiDetectionService::class.java)
         serviceIntent.putExtra("Alarm", isAlarmActive)
         serviceIntent.putExtra("Flash", isFlash)
@@ -175,6 +180,7 @@ class WifiActivity : AppCompatActivity() {
     }
 
     private fun stopWifiDetectionService() {
+        isWifiServiceRunning = false
         val serviceIntent = Intent(this, WifiDetectionService::class.java)
         stopService(serviceIntent)
     }

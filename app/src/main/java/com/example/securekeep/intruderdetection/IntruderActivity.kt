@@ -1,6 +1,5 @@
 package com.example.securekeep.intruderdetection
 
-import android.app.ActivityManager
 import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
@@ -20,6 +19,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.example.securekeep.MainActivity
 import com.example.securekeep.R
 import com.example.securekeep.databinding.ActivityIntruderBinding
 import com.example.securekeep.intruderdetection.IntruderServices.IntruderTrackingService
@@ -32,7 +32,7 @@ class IntruderActivity : AppCompatActivity() {
     }
     private var attemptThreshold = 2 // Default threshold value
     private var alertStatus = false
-    private var intruderServiceRunning = false
+    private var isIntruderServiceRunning = false
     private lateinit var alertDialog: AlertDialog
     private lateinit var devicePolicyManager: DevicePolicyManager
     private lateinit var compName: ComponentName
@@ -58,7 +58,12 @@ class IntruderActivity : AppCompatActivity() {
             requestDeviceAdmin()
         }
 
-        intruderServiceRunning = isIntruderServiceRunning()
+        binding.backBtn.setOnClickListener {
+            startActivity(Intent(this@IntruderActivity, MainActivity::class.java))
+            finish()
+        }
+
+        isIntruderServiceRunning = MainActivity.isServiceRunning(this@IntruderActivity, IntruderTrackingService::class.java)
 
         // Retrieving selected attempts and alert status
         alertStatus = sharedPreferences.getBoolean("AlertStatus", false)
@@ -88,10 +93,10 @@ class IntruderActivity : AppCompatActivity() {
             .create()
 
         binding.powerBtn.setOnClickListener {
-            if (alertStatus && intruderServiceRunning) {
+            if (alertStatus && isIntruderServiceRunning) {
                 stopBackgroundService()
                 alertStatus = false
-                intruderServiceRunning = false
+                isIntruderServiceRunning = false
                 Toast.makeText(this, "Intruder Alert Mode Deactivated", Toast.LENGTH_SHORT).show()
                 binding.powerBtn.setImageResource(R.drawable.power_on)
                 binding.activateText.text = getString(R.string.tap_to_activate)
@@ -102,7 +107,7 @@ class IntruderActivity : AppCompatActivity() {
             } else {
                 alertDialog.show()
                 alertStatus = true
-                intruderServiceRunning = true
+                isIntruderServiceRunning = true
 
                 object : CountDownTimer(10000, 1000) {
                     override fun onTick(millisUntilFinished: Long) {
@@ -150,7 +155,7 @@ class IntruderActivity : AppCompatActivity() {
 
 
     private fun updatePowerButton() {
-        if (alertStatus) {
+        if (alertStatus && isIntruderServiceRunning) {
             binding.powerBtn.setImageResource(R.drawable.power_off)
             binding.activateText.text = getString(R.string.tap_to_deactivate)
         } else {
@@ -187,21 +192,13 @@ class IntruderActivity : AppCompatActivity() {
 
     private fun startBackgroundService() {
             Log.d("IntruderActivity", "startingBackgroundService ")
-            //intruderServiceRunning = true
+            isIntruderServiceRunning = true
             startService(Intent(this@IntruderActivity, IntruderTrackingService::class.java))
     }
 
     private fun stopBackgroundService() {
-        //intruderServiceRunning = false
+        isIntruderServiceRunning = false
         stopService(Intent(this@IntruderActivity, IntruderTrackingService::class.java))
-    }
-
-
-
-    private fun isIntruderServiceRunning(): Boolean {
-        val manager = getSystemService(ACTIVITY_SERVICE) as ActivityManager
-        return manager.getRunningServices(Int.MAX_VALUE)
-            .any { it.service.className == IntruderTrackingService::class.java.name }
     }
 
     companion object {

@@ -10,6 +10,7 @@ import android.hardware.camera2.CameraAccessException
 import android.hardware.camera2.CameraManager
 import android.media.AudioManager
 import android.media.MediaPlayer
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -30,6 +31,7 @@ import com.example.securekeep.MainActivity
 import com.example.securekeep.MyPreferences
 import com.example.securekeep.R
 import com.example.securekeep.databinding.ActivityEnterPinBinding
+import java.io.IOException
 
 class EnterPinActivity : AppCompatActivity() {
 
@@ -98,7 +100,27 @@ class EnterPinActivity : AppCompatActivity() {
 
         // Retrieve the saved tone
         val toneId = sharedPreferences.getInt("alarm_tone", R.raw.alarm_tune_1)
-        mediaPlayer = MediaPlayer.create(this, toneId)
+        val toneUriString = sharedPreferences.getString("alarm_tone_uri", null)
+        val systemToneUri = toneUriString?.let { Uri.parse(it) } // Convert to Uri if exists
+
+        // Create MediaPlayer based on tone URI or ID
+        mediaPlayer = if (systemToneUri != null) {
+            try {
+                Log.d("EnterPinActivity", "systemToneUri: $systemToneUri")
+                MediaPlayer().apply {
+                    setDataSource(this@EnterPinActivity, systemToneUri)
+                    prepare()
+                    isLooping = true
+                }
+            } catch (e: IOException) {
+                Log.e("EnterPinActivity", "Error setting data source", e)
+                null // Handle the null case. You might want to set a default sound here.
+            }
+        } else {
+            MediaPlayer.create(this, toneId).apply {
+                isLooping = true
+            }
+        }
 
         val intent = intent
         isAlarmActive = intent.getBooleanExtra("Alarm", false)
@@ -202,7 +224,6 @@ class EnterPinActivity : AppCompatActivity() {
             if (!isPlaying) {
                 start()
             }
-            isLooping = true // Set looping to true
         }
 
         if (isVibrate) {
@@ -240,6 +261,9 @@ class EnterPinActivity : AppCompatActivity() {
         if (isFlash) {
             toggleFlashlight()
         }
+
+        // Stop volume check when service is destroyed
+        handler.removeCallbacks(volumeCheckRunnable)
     }
 
     private fun triggerVibration() {

@@ -10,6 +10,7 @@ import android.hardware.camera2.CameraAccessException
 import android.hardware.camera2.CameraManager
 import android.media.AudioManager
 import android.media.MediaPlayer
+import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
@@ -21,6 +22,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import com.example.securekeep.R
+import java.io.IOException
 
 class AlarmService : Service() {
 
@@ -70,7 +72,30 @@ class AlarmService : Service() {
         editor.putBoolean("AlarmServiceStatus", isAlarmServiceActive)
         editor.apply()
 
-        mediaPlayer = MediaPlayer.create(this, sharedPreferences.getInt("alarm_tone", R.raw.alarm_tune_1))
+        // Retrieve the saved tone
+        val toneId = sharedPreferences.getInt("alarm_tone", R.raw.alarm_tune_1)
+        val toneUriString = sharedPreferences.getString("alarm_tone_uri", null)
+        val systemToneUri = toneUriString?.let { Uri.parse(it) } // Convert to Uri if exists
+
+        // Create MediaPlayer based on tone URI or ID
+        mediaPlayer = if (systemToneUri != null) {
+            try {
+                Log.d("AlarmService", "systemToneUri: $systemToneUri")
+                MediaPlayer().apply {
+                    setDataSource(this@AlarmService, systemToneUri)
+                    prepare()
+                    isLooping = true
+                }
+            } catch (e: IOException) {
+                Log.e("AlarmService", "Error setting data source", e)
+                null // Handle the null case. You might want to set a default sound here.
+            }
+        } else {
+            MediaPlayer.create(this, toneId).apply {
+                isLooping = true
+            }
+        }
+
         setSystemSoundLevel(currentSoundLevel)
         acquireWakeLock()
     }
@@ -94,7 +119,7 @@ class AlarmService : Service() {
         }
 
         startForegroundService()
-        startAlarm()
+        triggerAlarm()
 
         return START_NOT_STICKY
     }
@@ -102,12 +127,11 @@ class AlarmService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         stopAlarm()
+
         // Update SharedPreferences to set AlarmServiceStatus to false
         val editor = sharedPreferences.edit()
         editor.putBoolean("AlarmServiceStatus", false)
         editor.apply()
-
-        releaseWakeLock()
     }
 
 
@@ -135,13 +159,11 @@ class AlarmService : Service() {
         startForeground(1, notification)
     }
 
-    private fun startAlarm() {
+    private fun triggerAlarm() {
         mediaPlayer?.apply {
             if (!isPlaying) {
                 start()
             }
-
-            isLooping = true // Set looping to true
         }
 
         if (isVibrate) {
@@ -149,7 +171,7 @@ class AlarmService : Service() {
         }
 
         if (isFlash) {
-            flashRunnable.run() // Start toggling the flashlight
+            handler.post(flashRunnable)
         }
     }
 
@@ -178,6 +200,8 @@ class AlarmService : Service() {
         }
 
         handler.removeCallbacks(flashRunnable)
+        // Stop volume check when service is destroyed
+        handler.removeCallbacks(volumeCheckRunnable)
 
         releaseWakeLock()
     }

@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.example.securekeep.MainActivity
 import com.example.securekeep.R
 import com.example.securekeep.alarmsetup.EnterPinActivity
 import com.example.securekeep.databinding.ActivityTouchPhoneBinding
@@ -25,6 +26,7 @@ class TouchPhoneActivity : AppCompatActivity() {
     private var isAlarmActive = false
     private var isVibrate = false
     private var isFlash = false
+    private var isTouchServiceRunning = false
     private lateinit var sharedPreferences: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -43,6 +45,7 @@ class TouchPhoneActivity : AppCompatActivity() {
         isVibrate = sharedPreferences.getBoolean("VibrateStatusTouch", false)
         isFlash = sharedPreferences.getBoolean("FlashStatusTouch", false)
 
+        isTouchServiceRunning = MainActivity.isServiceRunning(this@TouchPhoneActivity, MotionDetectionService::class.java)
         updateUI()
 
         binding.backBtn.setOnClickListener {
@@ -60,7 +63,7 @@ class TouchPhoneActivity : AppCompatActivity() {
             .create()
 
         binding.powerBtn.setOnClickListener {
-            if (!isAlarmActive) {
+            if (!isAlarmActive && !isTouchServiceRunning) {
                 isAlarmActive = true
                 alertDialog.show()
 
@@ -168,6 +171,7 @@ class TouchPhoneActivity : AppCompatActivity() {
     }
 
     private fun startMotionDetectionService() {
+        isTouchServiceRunning = true
         val serviceIntent = Intent(this, MotionDetectionService::class.java)
         serviceIntent.putExtra("Alarm", isAlarmActive)
         serviceIntent.putExtra("Flash", isFlash)
@@ -176,6 +180,7 @@ class TouchPhoneActivity : AppCompatActivity() {
     }
 
     private fun stopMotionDetectionService() {
+        isTouchServiceRunning = false
         val serviceIntent = Intent(this, MotionDetectionService::class.java)
         stopService(serviceIntent)
     }

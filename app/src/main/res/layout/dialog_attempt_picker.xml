@@ -16,30 +16,35 @@
             android:id="@+id/radioButton1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/_1" />
+            android:text="@string/_1"
+            android:textColor="@color/black" />
 
         <RadioButton
             android:id="@+id/radioButton2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/_2" />
+            android:text="@string/_2"
+            android:textColor="@color/black"/>
 
         <RadioButton
             android:id="@+id/radioButton3"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/_3" />
+            android:text="@string/_3"
+            android:textColor="@color/black"/>
 
         <RadioButton
             android:id="@+id/radioButton4"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/_4" />
+            android:text="@string/_4"
+            android:textColor="@color/black"/>
 
         <RadioButton
             android:id="@+id/radioButton5"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/_5" />
+            android:text="@string/_5"
+            android:textColor="@color/black"/>
     </RadioGroup>
 </LinearLayout>

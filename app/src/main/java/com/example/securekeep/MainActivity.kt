@@ -1,6 +1,7 @@
 package com.example.securekeep
 
 import android.Manifest
+import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -14,6 +15,7 @@ import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.GravityCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.GridLayoutManager
@@ -69,10 +71,12 @@ class MainActivity : AppCompatActivity() {
     private fun setupUI() {
         binding.settingBtn.setOnClickListener {
             startActivity(Intent(this, SettingActivity::class.java))
+            binding.main.closeDrawer(GravityCompat.START) // Close the drawer after starting the activity
         }
 
         toggle = ActionBarDrawerToggle(this, binding.main, binding.toolbar, R.string.open, R.string.close)
         binding.main.addDrawerListener(toggle)
+        toggle.drawerArrowDrawable.color = ContextCompat.getColor(this, android.R.color.white)
         toggle.syncState()
 
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -80,18 +84,35 @@ class MainActivity : AppCompatActivity() {
 
         binding.navBar.setNavigationItemSelectedListener {
             when (it.itemId) {
-                R.id.wifiDetect -> startActivity(Intent(this, WifiActivity::class.java))
-                R.id.earphoneDetect -> startActivity(Intent(this, EarphonesActivity::class.java))
-                R.id.touchDetect -> startActivity(Intent(this, TouchPhoneActivity::class.java))
-                R.id.intruder ->
+                R.id.wifiDetect -> {
+                    startActivity(Intent(this, WifiActivity::class.java))
+                    binding.main.closeDrawer(GravityCompat.START) // Close the drawer
+                }
+                R.id.earphoneDetect -> {
+                    startActivity(Intent(this, EarphonesActivity::class.java))
+                    binding.main.closeDrawer(GravityCompat.START) // Close the drawer
+                }
+                R.id.touchDetect -> {
+                    startActivity(Intent(this, TouchPhoneActivity::class.java))
+                    binding.main.closeDrawer(GravityCompat.START) // Close the drawer
+                }
+                R.id.intruder -> {
                     if (checkPermissionsForService(this)) {
                         startActivity(Intent(this, IntruderActivity::class.java))
-                    }
-                    else{
+                        binding.main.closeDrawer(GravityCompat.START) // Close the drawer
+                    } else {
                         startActivity(Intent(this, PermissionActivity::class.java))
+                        binding.main.closeDrawer(GravityCompat.START) // Close the drawer
                     }
-                R.id.chargeDetect -> startActivity(Intent(this, ChargeDetectActivity::class.java))
-                R.id.pocketDetect -> startActivity(Intent(this, AntiPocketActivity::class.java))
+                }
+                R.id.chargeDetect -> {
+                    startActivity(Intent(this, ChargeDetectActivity::class.java))
+                    binding.main.closeDrawer(GravityCompat.START) // Close the drawer
+                }
+                R.id.pocketDetect -> {
+                    startActivity(Intent(this, AntiPocketActivity::class.java))
+                    binding.main.closeDrawer(GravityCompat.START) // Close the drawer
+                }
             }
             true
         }
@@ -101,6 +122,7 @@ class MainActivity : AppCompatActivity() {
         binding.rcv.adapter = adapter
         binding.rcv.setHasFixedSize(true)
     }
+
 
     private fun requestNecessaryPermissions() {
         val permissionsToRequest = requiredPermissions.filter { permission ->
@@ -182,6 +204,12 @@ class MainActivity : AppCompatActivity() {
                 return cameraPermission == PackageManager.PERMISSION_GRANTED &&
                         readStoragePermission == PackageManager.PERMISSION_GRANTED
             }
+        }
+
+        fun isServiceRunning(context: Context, serviceClass: Class<*>): Boolean {
+            val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+            return manager.getRunningServices(Int.MAX_VALUE)
+                .any { it.service.className == serviceClass.name }
         }
     }
 }

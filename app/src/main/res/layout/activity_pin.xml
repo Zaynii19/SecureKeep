@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".settings.PinActivity"
-    android:background="#DEE4DE">
+    android:background="@color/app_background">
 
     <LinearLayout
         android:id="@+id/linearLayout"
@@ -48,7 +48,7 @@
         android:layout_width="match_parent"
         android:layout_height="80dp"
         android:layout_margin="20dp"
-        android:background="@color/white"
+        android:background="@drawable/round_boarder"
         android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -93,7 +93,7 @@
         android:layout_width="match_parent"
         android:layout_height="100dp"
         android:layout_margin="20dp"
-        android:background="@color/white"
+        android:background="@drawable/round_boarder"
         android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

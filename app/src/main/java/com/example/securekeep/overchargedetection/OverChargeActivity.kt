@@ -10,6 +10,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.example.securekeep.MainActivity
 import com.example.securekeep.R
 import com.example.securekeep.alarmsetup.EnterPinActivity
 import com.example.securekeep.databinding.ActivityOverChargeBinding
@@ -23,6 +24,7 @@ class OverChargeActivity : AppCompatActivity() {
     private var isAlarmActive = false
     private var isVibrate = false
     private var isFlash = false
+    private var isBatteryServiceRunning = false
     private lateinit var sharedPreferences: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,6 +43,8 @@ class OverChargeActivity : AppCompatActivity() {
         isVibrate = sharedPreferences.getBoolean("VibrateStatusOverCharge", false)
         isFlash = sharedPreferences.getBoolean("FlashStatusOverCharge", false)
 
+        isBatteryServiceRunning = MainActivity.isServiceRunning(this@OverChargeActivity, BatteryDetectionService::class.java)
+
         updateUI()
 
         binding.backBtn.setOnClickListener {
@@ -58,7 +62,7 @@ class OverChargeActivity : AppCompatActivity() {
             .create()
 
         binding.powerBtn.setOnClickListener {
-            if (!isAlarmActive) {
+            if (!isAlarmActive && !isBatteryServiceRunning) {
                 isAlarmActive = true
                 alertDialog.show()
 
@@ -166,6 +170,7 @@ class OverChargeActivity : AppCompatActivity() {
     }
 
     private fun startBatteryDetectionService() {
+        isBatteryServiceRunning = true
         val serviceIntent = Intent(this, BatteryDetectionService::class.java)
         serviceIntent.putExtra("Alarm", isAlarmActive)
         serviceIntent.putExtra("Flash", isFlash)
@@ -174,6 +179,7 @@ class OverChargeActivity : AppCompatActivity() {
     }
 
     private fun stopBatteryDetectionService() {
+        isBatteryServiceRunning = false
         val serviceIntent = Intent(this, BatteryDetectionService::class.java)
         stopService(serviceIntent)
     }

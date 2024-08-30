@@ -4,12 +4,14 @@ import android.content.Context
 import android.content.Intent
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
 import com.example.securekeep.R
 import com.example.securekeep.databinding.IntruderSelfieItemBinding
 import com.example.securekeep.intruderdetection.FullPictureActivity
+import java.io.File
 
 class SelfieAdapter(val context: Context, private var selfieList: MutableList<SelfieModel>) : RecyclerView.Adapter<SelfieAdapter.CollectionsHolder>() {
     class CollectionsHolder(val binding: IntruderSelfieItemBinding) : RecyclerView.ViewHolder(binding.root)
@@ -31,10 +33,34 @@ class SelfieAdapter(val context: Context, private var selfieList: MutableList<Se
             }
             context.startActivity(intent)
         }
+
+        holder.binding.delBtn.setOnClickListener {
+            deleteImage(position)
+        }
     }
 
     override fun getItemCount(): Int {
         return selfieList.size
+    }
+
+    private fun deleteImage(position: Int) {
+        val selfieModel = selfieList[position]
+        val file = File(selfieModel.imageUri.path ?: return)
+
+        // Delete the file from storage
+        if (file.exists()) {
+            if (file.delete()) {
+                // Remove from the list
+                selfieList.removeAt(position)
+                notifyItemRemoved(position)
+                notifyItemRangeChanged(position, selfieList.size)
+            } else {
+                // Handle failure
+                Toast.makeText(context, "Failed to delete the image.", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Toast.makeText(context, "Image file not found.", Toast.LENGTH_SHORT).show()
+        }
     }
 
 
