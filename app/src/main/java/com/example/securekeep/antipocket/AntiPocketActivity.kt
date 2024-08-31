@@ -2,9 +2,11 @@ package com.example.securekeep.antipocket
 
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Color
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.util.Log
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
@@ -17,6 +19,7 @@ import com.example.securekeep.R
 import com.example.securekeep.alarmsetup.EnterPinActivity
 import com.example.securekeep.databinding.ActivityAntiPocketBinding
 import com.example.securekeep.settings.SettingActivity
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class AntiPocketActivity : AppCompatActivity() {
 
@@ -58,16 +61,22 @@ class AntiPocketActivity : AppCompatActivity() {
             startActivity(Intent(this, SettingActivity::class.java))
         }
 
-        alertDialog = AlertDialog.Builder(this)
+        alertDialog = MaterialAlertDialogBuilder(this)
             .setTitle("Will Be Activated In 10 Seconds")
             .setMessage("00:10")
+            .setBackground(ContextCompat.getDrawable(this, R.drawable.simple_round_boarder))
             .setCancelable(false)
             .create()
 
         binding.powerBtn.setOnClickListener {
             if (!isAlarmActive && !isPocketServiceRunning) {
                 isAlarmActive = true
-                alertDialog.show()
+
+                alertDialog.apply {
+                    show()
+                    // Set message text color
+                    findViewById<TextView>(android.R.id.message)?.setTextColor(Color.BLACK)
+                }
 
                 object : CountDownTimer(10000, 1000) {
                     override fun onTick(millisUntilFinished: Long) {

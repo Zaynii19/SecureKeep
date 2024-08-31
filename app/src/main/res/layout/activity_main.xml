@@ -14,13 +14,13 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
-            android:layout_marginTop="30dp">
+            android:layout_marginTop="@dimen/_26sdp">
 
             <androidx.appcompat.widget.Toolbar
                 android:id="@+id/toolbar"
                 android:layout_width="match_parent"
                 android:layout_height="?attr/actionBarSize"
-                android:background="#145016"
+                android:background="@color/toolbar_color"
                 android:theme="?attr/actionBarTheme"
                 app:popupTheme="@style/ThemeOverlay.AppCompat.Light">
 
@@ -31,16 +31,16 @@
                     android:layout_gravity="center_horizontal"
                     android:text="@string/securekeep"
                     android:textColor="@android:color/white"
-                    android:textSize="20sp"
+                    android:textSize="@dimen/_16ssp"
                     android:textStyle="bold" />
 
                 <ImageButton
                     android:id="@+id/settingBtn"
                     style="@style/Widget.AppCompat.Button.Borderless"
-                    android:layout_width="60dp"
+                    android:layout_width="@dimen/_45sdp"
                     android:layout_height="wrap_content"
                     android:layout_gravity="end"
-                    android:padding="20dp"
+                    android:padding="@dimen/_14sdp"
                     android:contentDescription="@string/settings"
                     android:scaleType="fitCenter"
                     app:srcCompat="@drawable/setting"
@@ -52,10 +52,10 @@
                 android:id="@+id/rcv"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="10dp"
+                android:layout_marginVertical="@dimen/_10sdp"
                 android:scrollbarStyle="insideInset"
                 android:scrollbars="vertical"
-                android:scrollbarSize="10dp" />
+                android:scrollbarSize="@dimen/_1sdp" />
 
         </LinearLayout>
 
@@ -66,7 +66,7 @@
         android:layout_gravity="start"
         android:background="@color/app_background"
         app:itemTextColor="@color/black"
-        app:itemIconTint="#786E6E"
+        app:itemIconTint="#6D786D"
         android:fitsSystemWindows="true"
         android:visibility="visible"
         app:headerLayout="@layout/nav_header"

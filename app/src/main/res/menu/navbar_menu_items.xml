@@ -30,4 +30,9 @@
         android:icon="@drawable/pocket"
         android:title="@string/anti_pocket_detection"/>
 
+    <item
+        android:id="@+id/about"
+        android:icon="@drawable/info"
+        android:title="@string/about"/>
+
 </menu>

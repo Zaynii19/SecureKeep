@@ -1,11 +1,15 @@
 package com.example.securekeep.intruderdetection
 
 import android.content.Intent
+import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
 import android.util.Log
+import android.view.View
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -14,6 +18,7 @@ import com.example.securekeep.R
 import com.example.securekeep.databinding.ActivityIntruderSelfieBinding
 import com.example.securekeep.intruderdetection.IntruderAdapter.SelfieAdapter
 import com.example.securekeep.intruderdetection.IntruderAdapter.SelfieModel
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -41,47 +46,93 @@ class IntruderSelfieActivity : AppCompatActivity() {
             finish()
         }
 
-        selfieList = mutableListOf() // Initialize the list
-        binding.rcv.layoutManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL, true)
-        selfieAdapter = SelfieAdapter(this, selfieList)
+        selfieList = mutableListOf()
+        binding.rcv.layoutManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
+        selfieAdapter = SelfieAdapter(this, selfieList, ::updateActionButtonVisibility)
         binding.rcv.adapter = selfieAdapter
         binding.rcv.setHasFixedSize(true)
         binding.rcv.setItemViewCacheSize(13)
 
+        // Initially hide action buttons
+        updateActionButtonVisibility()
+
         loadSelfiesFromStorage()
+
+        binding.selectAllBtn.setOnClickListener {
+            if (selfieAdapter.getSelectedCount() == selfieList.size) {
+                selfieAdapter.clearSelection()
+            } else {
+                selfieAdapter.selectAll()
+            }
+            updateActionButtonVisibility()
+        }
+
+        binding.delBtn.setOnClickListener {
+            showDeleteConfirmationDialog()
+        }
     }
 
     private fun loadSelfiesFromStorage() {
-        // Define your app-specific directory for images
         val storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
 
         if (storageDir != null && storageDir.exists()) {
-            // List all files in the directory
             val imageFiles = storageDir.listFiles { file ->
                 file.isFile && (file.extension == "jpg" || file.extension == "jpeg" || file.extension == "png")
             }
 
-            // Create a date formatter for the desired format
             val dateFormatter = SimpleDateFormat("yyyy/MM/dd hh:mm a", Locale.getDefault())
 
-            // Add image files to the selfie list
             imageFiles?.forEach { file ->
-                // The absolute path of the image file
                 val imageUri = Uri.fromFile(file)
-
-                // Format the last modified date
                 val dateTaken = dateFormatter.format(Date(file.lastModified()))
-
-                // Add to the list
                 selfieList.add(SelfieModel(imageUri, dateTaken))
             }
+
+            // Sort the selfieList by dateTaken
+            selfieList.sortByDescending { selfie ->
+                dateFormatter.parse(selfie.dateTime) // Parse the date for accurate sorting
+            }
+
         } else {
             Log.e("SelfieActivity", "Storage directory not found or is empty.")
         }
 
-        // Notify adapter about data changes
         selfieAdapter.notifyDataSetChanged()
-
         Log.d("SelfieActivity", "loadSelfiesFromStorage: Loaded ${selfieList.size} images")
+    }
+
+
+    private fun showDeleteConfirmationDialog() {
+        val builder = MaterialAlertDialogBuilder(this)
+        builder.setTitle("Delete")
+            .setMessage("Do you want to delete the selected intruder pictures?")
+            .setPositiveButton("Yes") { _, _ ->
+                deleteSelectedImages()
+            }
+            .setNegativeButton("No") { dialog, _ ->
+                dialog.dismiss()
+            }
+
+        val exitDialog = builder.create()
+        exitDialog.show()
+        exitDialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.GREEN)
+        exitDialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.GREEN)
+    }
+
+    private fun deleteSelectedImages() {
+        selfieAdapter.deleteSelectedItems { deletedCount ->
+            Toast.makeText(this, "Deleted $deletedCount items", Toast.LENGTH_SHORT).show()
+            updateActionButtonVisibility()
+        }
+    }
+
+    private fun updateActionButtonVisibility() {
+        if (selfieAdapter.isSelectionMode) {
+            binding.selectAllBtn.visibility = View.VISIBLE
+            binding.delBtn.visibility = View.VISIBLE
+        } else {
+            binding.selectAllBtn.visibility = View.GONE
+            binding.delBtn.visibility = View.GONE
+        }
     }
 }

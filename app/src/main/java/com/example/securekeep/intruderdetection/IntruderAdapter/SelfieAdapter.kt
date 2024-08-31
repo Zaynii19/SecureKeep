@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
@@ -13,55 +13,104 @@ import com.example.securekeep.databinding.IntruderSelfieItemBinding
 import com.example.securekeep.intruderdetection.FullPictureActivity
 import java.io.File
 
-class SelfieAdapter(val context: Context, private var selfieList: MutableList<SelfieModel>) : RecyclerView.Adapter<SelfieAdapter.CollectionsHolder>() {
-    class CollectionsHolder(val binding: IntruderSelfieItemBinding) : RecyclerView.ViewHolder(binding.root)
+class SelfieAdapter(
+    val context: Context,
+    private var selfieList: MutableList<SelfieModel>,
+    private val onSelectionModeChanged: () -> Unit
+) : RecyclerView.Adapter<SelfieAdapter.CollectionsHolder>() {
+
+    private val selectedItems = mutableSetOf<Int>()
+    var isSelectionMode = false
+
+    inner class CollectionsHolder(val binding: IntruderSelfieItemBinding) : RecyclerView.ViewHolder(binding.root) {
+        init {
+            binding.root.setOnLongClickListener {
+                toggleSelection(adapterPosition)
+                true
+            }
+        }
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CollectionsHolder {
         return CollectionsHolder(IntruderSelfieItemBinding.inflate(LayoutInflater.from(parent.context), parent, false))
     }
 
     override fun onBindViewHolder(holder: CollectionsHolder, position: Int) {
-        holder.binding.dateTime.text = selfieList[position].dateTime
+        val selfie = selfieList[position]
+        holder.binding.dateTime.text = selfie.dateTime
         Glide.with(context)
-            .load(selfieList[position].imageUri)
-            .apply(RequestOptions().placeholder(R.drawable.camera))  // Placeholder image
+            .load(selfie.imageUri)
+            .apply(RequestOptions().placeholder(R.drawable.camera))
             .into(holder.binding.intruderSelfie)
 
         holder.binding.intruderSelfie.setOnClickListener {
             val intent = Intent(context, FullPictureActivity::class.java).apply {
-                putExtra("SelfieUri", selfieList[position].imageUri.toString()) // Convert Uri to String
+                putExtra("SelfieUri", selfie.imageUri.toString())
             }
             context.startActivity(intent)
         }
 
-        holder.binding.delBtn.setOnClickListener {
-            deleteImage(position)
-        }
-    }
-
-    override fun getItemCount(): Int {
-        return selfieList.size
-    }
-
-    private fun deleteImage(position: Int) {
-        val selfieModel = selfieList[position]
-        val file = File(selfieModel.imageUri.path ?: return)
-
-        // Delete the file from storage
-        if (file.exists()) {
-            if (file.delete()) {
-                // Remove from the list
-                selfieList.removeAt(position)
-                notifyItemRemoved(position)
-                notifyItemRangeChanged(position, selfieList.size)
-            } else {
-                // Handle failure
-                Toast.makeText(context, "Failed to delete the image.", Toast.LENGTH_SHORT).show()
-            }
+        // Change background color based on selection state
+        if (selectedItems.contains(position)) {
+            holder.binding.root.background = ContextCompat.getDrawable(context, R.drawable.selected_item_round_boarder)
         } else {
-            Toast.makeText(context, "Image file not found.", Toast.LENGTH_SHORT).show()
+            holder.binding.root.background = ContextCompat.getDrawable(context, R.drawable.simple_round_boarder)
+        }
+
+        holder.binding.root.setOnClickListener {
+            if (isSelectionMode) {
+                toggleSelection(position)
+            } else {
+                // Normal click action here
+            }
         }
     }
 
+    override fun getItemCount(): Int = selfieList.size
 
+    private fun toggleSelection(position: Int) {
+        if (selectedItems.contains(position)) {
+            selectedItems.remove(position)
+        } else {
+            selectedItems.add(position)
+        }
+
+        isSelectionMode = selectedItems.isNotEmpty()
+        onSelectionModeChanged() // Notify the activity to update UI elements
+        notifyItemChanged(position)
+    }
+
+    fun selectAll() {
+        selectedItems.clear()
+        selfieList.indices.forEach { selectedItems.add(it) }
+        isSelectionMode = true
+        onSelectionModeChanged()
+        notifyDataSetChanged()
+    }
+
+    fun clearSelection() {
+        selectedItems.clear()
+        isSelectionMode = false
+        onSelectionModeChanged()
+        notifyDataSetChanged()
+    }
+
+    fun getSelectedCount(): Int = selectedItems.size
+
+    fun deleteSelectedItems(onItemsDeleted: (Int) -> Unit) {
+        val selectedIndices = selectedItems.sortedDescending()
+        selectedIndices.forEach { index ->
+            val selfieModel = selfieList[index]
+            val file = File(selfieModel.imageUri.path ?: return@forEach)
+            if (file.exists()) {
+                file.delete()
+            }
+            selfieList.removeAt(index)
+        }
+        val deletedCount = selectedIndices.size
+        selectedItems.clear()
+        isSelectionMode = false
+        notifyDataSetChanged()
+        onItemsDeleted(deletedCount)
+    }
 }

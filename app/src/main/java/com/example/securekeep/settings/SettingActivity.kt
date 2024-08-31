@@ -16,6 +16,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.securekeep.R
@@ -248,8 +249,8 @@ class SettingActivity : AppCompatActivity() {
 
     // Helper method to update selected tone layout
     private fun updateSelectedToneLayout(layout: ConstraintLayout, toneId: Int) {
-        selectedLayout?.setBackgroundColor(resources.getColor(R.color.white))
-        layout.setBackgroundColor(resources.getColor(R.color.selected_tone_color))
+        selectedLayout?.background = ContextCompat.getDrawable(this, R.drawable.simple_round_boarder)
+        layout.background = ContextCompat.getDrawable(this, R.drawable.selected_tone_round_boarder)
         selectedLayout = layout
         selectedToneId = toneId
     }

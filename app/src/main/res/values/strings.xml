@@ -76,4 +76,14 @@
     <string name="error_not_having_camera">Your device does not have front camera.</string>
     <string name="error_camera_permission_denied">Camera permission denied.</string>
     <string name="let_s_get_start">Let\'s Get Start</string>
+    <string name="about">About</string>
+    <string name="unintall">Unintall</string>
+    <string name="uninstall">Uninstall</string>
+    <string name="how_to_uninstall">How to Uninstall</string>
+    <string name="version">Version</string>
+    <string name="_1_0_1">1.0.1</string>
+    <string name="about_securekeep">About SecureKeep</string>
+    <string name="email">Email</string>
+    <string name="contact">Contact</string>
+    <string name="linkedin">LinkedIn</string>
 </resources>

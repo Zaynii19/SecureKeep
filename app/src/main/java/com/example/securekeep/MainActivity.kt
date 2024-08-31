@@ -113,6 +113,10 @@ class MainActivity : AppCompatActivity() {
                     startActivity(Intent(this, AntiPocketActivity::class.java))
                     binding.main.closeDrawer(GravityCompat.START) // Close the drawer
                 }
+                R.id.about -> {
+                    startActivity(Intent(this, AboutActivity::class.java))
+                    binding.main.closeDrawer(GravityCompat.START) // Close the drawer
+                }
             }
             true
         }

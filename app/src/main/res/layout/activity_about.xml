@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".AboutActivity"
+    android:background="@color/app_background">
+
+    <LinearLayout
+        android:id="@+id/linearLayout"
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:layout_marginTop="4dp"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageButton
+            android:id="@+id/backBtn"
+            style="@style/Widget.AppCompat.Button.Borderless"
+            android:layout_width="80dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="start"
+            android:contentDescription="@string/back"
+            android:padding="25dp"
+            android:scaleType="fitCenter"
+            app:srcCompat="@drawable/back"
+            app:tint="@color/black" />
+
+        <TextView
+            android:id="@+id/activityName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="@string/about_securekeep"
+            android:textColor="@color/black"
+            android:textSize="@dimen/_16ssp"
+            android:textStyle="bold"
+            android:layout_marginStart="60dp"/>
+
+    </LinearLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/uninstallBtn"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/_50sdp"
+        android:layout_margin="20dp"
+        android:layout_marginTop="52dp"
+        android:background="@drawable/simple_round_boarder"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/linearLayout">
+
+        <ImageButton
+            android:id="@+id/bin"
+            style="@style/Widget.AppCompat.Button.Borderless"
+            android:layout_width="@dimen/_30sdp"
+            android:layout_height="@dimen/_30sdp"
+            android:layout_marginStart="@dimen/_5sdp"
+            android:contentDescription="@string/back"
+            android:scaleType="fitCenter"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/bin"
+            app:tint="@color/black" />
+
+        <TextView
+            android:id="@+id/uninstall"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="10dp"
+            android:text="@string/how_to_uninstall"
+            android:textColor="@color/black"
+            android:textSize="@dimen/_14ssp"
+            android:textStyle="bold"
+            android:gravity="start"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/bin"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/constraintLayout2"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/_50sdp"
+        android:layout_margin="20dp"
+        android:layout_marginTop="52dp"
+        android:background="@drawable/simple_round_boarder"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/uninstallBtn">
+
+        <TextView
+            android:id="@+id/version"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="start"
+            android:text="@string/version"
+            android:layout_marginStart="@dimen/_15sdp"
+            android:textColor="@color/black"
+            android:textSize="@dimen/_14ssp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/versionNum"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="start"
+            android:text="@string/_1_0_1"
+            android:layout_marginStart="@dimen/_15sdp"
+            android:textColor="@color/black"
+            android:textSize="@dimen/_13ssp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/version"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/contactBtn"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/_50sdp"
+        android:layout_margin="20dp"
+        android:layout_marginTop="52dp"
+        android:background="@drawable/simple_round_boarder"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/constraintLayout2">
+
+        <TextView
+            android:id="@+id/contact"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="start"
+            android:text="@string/contact"
+            android:layout_marginStart="@dimen/_15sdp"
+            android:textColor="@color/black"
+            android:textSize="@dimen/_14ssp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/emailBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/email"
+            android:textColorLink="@color/linkColor"
+            android:textColor="@color/black"
+            android:textSize="@dimen/_14ssp"
+            android:gravity="center"
+            android:layout_marginStart="@dimen/_25sdp"
+            app:drawableTopCompat="@drawable/email"
+            android:linksClickable="true"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/contact"
+            app:layout_constraintTop_toTopOf="parent"/>
+
+        <TextView
+            android:id="@+id/linkedinBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/linkedin"
+            android:layout_marginStart="@dimen/_50sdp"
+            android:textColor="@color/black"
+            android:textColorLink="@color/linkColor"
+            android:textSize="@dimen/_14ssp"
+            app:drawableTopCompat="@drawable/linkedin"
+            android:linksClickable="true"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/emailBtn"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

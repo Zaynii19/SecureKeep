@@ -5,4 +5,7 @@
     <color name="selected_tone_color">#DEE4DE</color>
     <color name="green">#16C31D</color>
     <color name="app_background">#DEE4DE</color>
+    <color name="linkColor">#62B3F3</color>
+    <color name="red">#F44336</color>
+    <color name="toolbar_color">#145016</color>
 </resources>

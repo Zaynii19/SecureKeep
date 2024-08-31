@@ -12,11 +12,13 @@ import android.os.CountDownTimer
 import android.util.Log
 import android.widget.RadioButton
 import android.widget.RadioGroup
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.securekeep.MainActivity
@@ -73,22 +75,12 @@ class IntruderActivity : AppCompatActivity() {
 
         updatePowerButton()
 
-        binding.infoBtn.setOnClickListener {
-            MaterialAlertDialogBuilder(this)
-                .setTitle("Alert")
-                .setMessage("This feature requires device admin permission, so before uninstalling this application, make sure to disable intruder alert.")
-                .setPositiveButton("OK") { dialog, _ -> dialog.dismiss() }
-                .create().apply {
-                    show()
-                    getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.GREEN)
-                }
-        }
-
         binding.pinAttemptSelector.setOnClickListener { showNumberPickerDialog() }
 
-        alertDialog = AlertDialog.Builder(this)
+        alertDialog = MaterialAlertDialogBuilder(this)
             .setTitle("Will Be Activated In 10 Seconds")
             .setMessage("00:10")
+            .setBackground(ContextCompat.getDrawable(this, R.drawable.simple_round_boarder))
             .setCancelable(false)
             .create()
 
@@ -105,7 +97,14 @@ class IntruderActivity : AppCompatActivity() {
                 editor.putBoolean("AlertStatus", alertStatus)
                 editor.apply()
             } else {
-                alertDialog.show()
+                alertDialog.apply {
+                    show()
+                    // Set title text color
+                    val titleView = findViewById<TextView>(androidx.appcompat.R.id.alertTitle)
+                    titleView?.setTextColor(Color.BLACK)
+                    // Set message text color
+                    findViewById<TextView>(android.R.id.message)?.setTextColor(Color.BLACK)
+                }
                 alertStatus = true
                 isIntruderServiceRunning = true
 
@@ -203,9 +202,5 @@ class IntruderActivity : AppCompatActivity() {
 
     companion object {
         private const val REQUEST_CODE_ENABLE_ADMIN = 1
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
     }
 }

@@ -7,14 +7,17 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.media.AudioManager
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.securekeep.MainActivity
@@ -22,6 +25,7 @@ import com.example.securekeep.R
 import com.example.securekeep.alarmsetup.EnterPinActivity
 import com.example.securekeep.databinding.ActivityEarphonesBinding
 import com.example.securekeep.settings.SettingActivity
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class EarphonesActivity : AppCompatActivity() {
     private val binding by lazy {
@@ -63,9 +67,10 @@ class EarphonesActivity : AppCompatActivity() {
             startActivity(Intent(this, SettingActivity::class.java))
         }
 
-        alertDialog = AlertDialog.Builder(this)
+        alertDialog = MaterialAlertDialogBuilder(this)
             .setTitle("Will Be Activated In 10 Seconds")
             .setMessage("00:10")
+            .setBackground(ContextCompat.getDrawable(this, R.drawable.simple_round_boarder))
             .setCancelable(false)
             .create()
 
@@ -86,7 +91,15 @@ class EarphonesActivity : AppCompatActivity() {
                     stopEarphoneDetection()
                 } else {
                     isAlarmActive = true
-                    alertDialog.show()
+
+                    alertDialog.apply {
+                        show()
+                        // Set title text color
+                        val titleView = findViewById<TextView>(androidx.appcompat.R.id.alertTitle)
+                        titleView?.setTextColor(Color.BLACK)
+                        // Set message text color
+                        findViewById<TextView>(android.R.id.message)?.setTextColor(Color.BLACK)
+                    }
 
                     object : CountDownTimer(10000, 1000) {
                         override fun onTick(millisUntilFinished: Long) {

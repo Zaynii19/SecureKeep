@@ -75,61 +75,63 @@ internal class CameraPreview(context: Context, cameraCallbacks: CameraCallbacks)
     }
 
     override fun surfaceChanged(surfaceHolder: SurfaceHolder, i: Int, i1: Int, i2: Int) {
-        if (mCamera == null) {  //Camera is not initialized yet.
+        if (mCamera == null) {
             mCameraCallbacks.onCameraError(CameraError.ERROR_CAMERA_OPEN_FAILED)
             return
-        } else if (surfaceHolder.surface == null) { //Surface preview is not initialized yet
+        } else if (surfaceHolder.surface == null) {
             mCameraCallbacks.onCameraError(CameraError.ERROR_CAMERA_OPEN_FAILED)
             return
         }
 
-        // stop preview before making changes
         try {
             mCamera!!.stopPreview()
         } catch (e: Exception) {
             // Ignore: tried to stop a non-existent preview
         }
 
-        // Make changes in preview size
-        val parameters = mCamera!!.parameters
-        val pictureSizes = mCamera!!.parameters.supportedPictureSizes
-
-        //Sort descending
-        Collections.sort<Camera.Size>(pictureSizes, PictureSizeComparator())
-
-        //set the camera image size based on config provided
-        val cameraSize = when (mCameraConfig!!.resolution) {
-            CameraResolution.HIGH_RESOLUTION -> pictureSizes[0] //Highest res
-            CameraResolution.MEDIUM_RESOLUTION -> pictureSizes[pictureSizes.size / 2] //Resolution at the middle
-            CameraResolution.LOW_RESOLUTION -> pictureSizes[pictureSizes.size - 1] //Lowest res
-            else -> throw RuntimeException("Invalid camera resolution.")
-        }
-        parameters.setPictureSize(cameraSize.width, cameraSize.height)
-
-        // Set the focus mode.
-        val supportedFocusModes = parameters.supportedFocusModes
-        if (supportedFocusModes.contains(mCameraConfig!!.focusMode)) {
-            parameters.focusMode = mCameraConfig!!.focusMode
-        }
-
-        requestLayout()
-
-        mCamera!!.parameters = parameters
-
         try {
-            mCamera!!.setDisplayOrientation(90)
-            mCamera!!.setPreviewDisplay(surfaceHolder)
+            val parameters = mCamera!!.parameters
+            val pictureSizes = parameters.supportedPictureSizes
+
+            // Sort and select the appropriate resolution
+            Collections.sort(pictureSizes, PictureSizeComparator())
+
+            val cameraSize = when (mCameraConfig!!.resolution) {
+                CameraResolution.HIGH_RESOLUTION -> pictureSizes[0]
+                CameraResolution.MEDIUM_RESOLUTION -> pictureSizes[pictureSizes.size / 2]
+                CameraResolution.LOW_RESOLUTION -> pictureSizes[pictureSizes.size - 1]
+                else -> throw RuntimeException("Invalid camera resolution.")
+            }
+
+            // Verify that the selected size is supported
+            if (pictureSizes.contains(cameraSize)) {
+                parameters.setPictureSize(cameraSize.width, cameraSize.height)
+            } else {
+                mCameraCallbacks.onCameraError(CameraError.ERROR_CAMERA_OPEN_FAILED)
+                Log.e("CameraPreview", "Selected picture size is not supported.")
+                return
+            }
+
+            // Set the focus mode, if supported
+            val supportedFocusModes = parameters.supportedFocusModes
+            if (supportedFocusModes.contains(mCameraConfig!!.focusMode)) {
+                parameters.focusMode = mCameraConfig!!.focusMode
+            }
+
+            mCamera!!.parameters = parameters
             mCamera!!.setPreviewDisplay(surfaceHolder)
             mCamera!!.startPreview()
-
             isSafeToTakePictureInternal = true
         } catch (e: IOException) {
-            //Cannot start preview
+            Log.e("CameraPreview", "Error setting camera preview: ${e.message}")
             mCameraCallbacks.onCameraError(CameraError.ERROR_CAMERA_OPEN_FAILED)
-        } catch (e: NullPointerException) {
+        } catch (e: RuntimeException) {
+            Log.e("CameraPreview", "Failed to set picture size: ${e.message}")
             mCameraCallbacks.onCameraError(CameraError.ERROR_CAMERA_OPEN_FAILED)
         }
     }
+
+
 
     override fun surfaceDestroyed(holder: SurfaceHolder) {
         // Surface will be destroyed when we return, so stop the preview.

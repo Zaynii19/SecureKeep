@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="160dp"
     android:layout_margin="10dp"
-    android:background="@drawable/round_boarder">
+    android:background="@drawable/simple_round_boarder">
 
     <ImageView
         android:id="@+id/intruderSelfie"
@@ -31,12 +31,14 @@
         app:layout_constraintStart_toEndOf="@+id/intruderSelfie" />
 
     <ImageView
-        android:id="@+id/delBtn"
+        android:id="@+id/checked"
         android:layout_width="@dimen/_20sdp"
         android:layout_height="@dimen/_20sdp"
         android:layout_marginEnd="@dimen/_20sdp"
         app:layout_constraintBottom_toTopOf="@+id/dateTime"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/bin" />
+        app:srcCompat="@drawable/checked"
+        app:tint="@color/green"
+        android:visibility="gone"/>
 </androidx.constraintlayout.widget.ConstraintLayout>
