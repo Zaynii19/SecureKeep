@@ -19,8 +19,8 @@ import androidx.core.view.GravityCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.GridLayoutManager
-import com.example.securekeep.RCV.RCVModel
-import com.example.securekeep.RCV.RvAdapter
+import com.example.securekeep.HomeRCV.RCVModel
+import com.example.securekeep.HomeRCV.RvAdapter
 import com.example.securekeep.antipocket.AntiPocketActivity
 import com.example.securekeep.chargingdetect.ChargeDetectActivity
 import com.example.securekeep.databinding.ActivityMainBinding
@@ -177,38 +177,47 @@ class MainActivity : AppCompatActivity() {
                 val cameraPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
                 val readStoragePermission = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_MEDIA_IMAGES)
                 val notiPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+                val overlayPermission = Settings.canDrawOverlays(context)
 
                 return cameraPermission == PackageManager.PERMISSION_GRANTED &&
                         readStoragePermission == PackageManager.PERMISSION_GRANTED &&
-                        notiPermission == PackageManager.PERMISSION_GRANTED
+                        notiPermission == PackageManager.PERMISSION_GRANTED &&
+                        overlayPermission
             }
             // Android 10 and less
-            else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q){
+            else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
                 val cameraPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
-                val readStoragePermission =    ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE)
+                val readStoragePermission = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE)
                 val writeStoragePermission = ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                val overlayPermission = Settings.canDrawOverlays(context)
 
                 return cameraPermission == PackageManager.PERMISSION_GRANTED &&
                         writeStoragePermission == PackageManager.PERMISSION_GRANTED &&
-                        readStoragePermission == PackageManager.PERMISSION_GRANTED
+                        readStoragePermission == PackageManager.PERMISSION_GRANTED &&
+                        overlayPermission
             }
             // Android 12 and less
             else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
                 val cameraPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
-                val readStoragePermission =    ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE)
+                val readStoragePermission = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE)
+                val overlayPermission = Settings.canDrawOverlays(context)
 
                 return cameraPermission == PackageManager.PERMISSION_GRANTED &&
-                        readStoragePermission == PackageManager.PERMISSION_GRANTED
+                        readStoragePermission == PackageManager.PERMISSION_GRANTED &&
+                        overlayPermission
             }
             // Android 13
-            else{
+            else {
                 val cameraPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
                 val readStoragePermission = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_MEDIA_IMAGES)
+                val overlayPermission = Settings.canDrawOverlays(context)
 
                 return cameraPermission == PackageManager.PERMISSION_GRANTED &&
-                        readStoragePermission == PackageManager.PERMISSION_GRANTED
+                        readStoragePermission == PackageManager.PERMISSION_GRANTED &&
+                        overlayPermission
             }
         }
+
 
         fun isServiceRunning(context: Context, serviceClass: Class<*>): Boolean {
             val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager

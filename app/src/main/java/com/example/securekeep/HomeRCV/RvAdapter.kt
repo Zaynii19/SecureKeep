@@ -1,4 +1,4 @@
-package com.example.securekeep.RCV
+package com.example.securekeep.HomeRCV
 
 import android.content.Context
 import android.content.Intent

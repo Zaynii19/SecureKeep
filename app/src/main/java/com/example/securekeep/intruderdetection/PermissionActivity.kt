@@ -83,7 +83,7 @@ class PermissionActivity : AppCompatActivity() {
         requestOverlayPermission()
     }
 
-        private fun requestOverlayPermission() {
+    private fun requestOverlayPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
             Toast.makeText(this, "Overlay permission is required for full functionality.", Toast.LENGTH_SHORT).show()
             val intent = Intent(

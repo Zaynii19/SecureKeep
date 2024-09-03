@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import android.graphics.Color
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.util.Log
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -30,6 +31,7 @@ class TouchPhoneActivity : AppCompatActivity() {
     private var isVibrate = false
     private var isFlash = false
     private var isTouchServiceRunning = false
+    private lateinit var alarmPreferences: SharedPreferences
     private lateinit var sharedPreferences: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -43,10 +45,14 @@ class TouchPhoneActivity : AppCompatActivity() {
         }
 
         // Retrieving selected attempts, alert status
+        alarmPreferences = getSharedPreferences("PinAndService", MODE_PRIVATE)
         sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
         isAlarmActive = sharedPreferences.getBoolean("AlarmStatusTouch", false)
         isVibrate = sharedPreferences.getBoolean("VibrateStatusTouch", false)
         isFlash = sharedPreferences.getBoolean("FlashStatusTouch", false)
+
+        Log.d("TouchActivity", "onCreate: Flash: $isFlash Vibrate: $isVibrate")
+
 
         isTouchServiceRunning = MainActivity.isServiceRunning(this@TouchPhoneActivity, MotionDetectionService::class.java)
         updateUI()
@@ -89,6 +95,7 @@ class TouchPhoneActivity : AppCompatActivity() {
                             alertDialog.dismiss()
                         }
                         Toast.makeText(this@TouchPhoneActivity, "Motion Detection Mode Activated", Toast.LENGTH_SHORT).show()
+                        Log.d("TouchActivity", "onFinish: Flash: $isFlash Vibrate: $isVibrate")
                         updateUI()
                         startMotionDetectionService()
                         // Storing alarm status value in shared preferences
@@ -107,6 +114,7 @@ class TouchPhoneActivity : AppCompatActivity() {
             binding.switchBtnV.setImageResource(if (isVibrate) R.drawable.switch_on else R.drawable.switch_off)
             Toast.makeText(this, if (isVibrate) "Vibration Enabled" else "Vibration Disabled", Toast.LENGTH_SHORT).show()
 
+            Log.d("TouchActivity", "vibrationClick: Vibrate: $isVibrate")
             // Storing vibrate status value in shared preferences
             val editor = sharedPreferences.edit()
             editor.putBoolean("VibrateStatusTouch", isVibrate)
@@ -118,6 +126,7 @@ class TouchPhoneActivity : AppCompatActivity() {
             binding.switchBtnF.setImageResource(if (isFlash) R.drawable.switch_on else R.drawable.switch_off)
             Toast.makeText(this, if (isFlash) "Flash Turned on" else "Flash Turned off", Toast.LENGTH_SHORT).show()
 
+            Log.d("TouchActivity", "FlashClick: Flash: $isFlash")
             // Storing flash status value in shared preferences
             val editor = sharedPreferences.edit()
             editor.putBoolean("FlashStatusTouch", isFlash)
@@ -142,13 +151,14 @@ class TouchPhoneActivity : AppCompatActivity() {
         super.onResume()
         val isAlarmServiceActive = sharedPreferences.getBoolean("AlarmServiceStatus", false)
         isAlarmActive = sharedPreferences.getBoolean("AlarmStatusTouch", false)
-        isFlash = sharedPreferences.getBoolean("FlashStatusTouch", false)
-        isVibrate = sharedPreferences.getBoolean("VibrateStatusTouch", false)
+        isFlash = alarmPreferences.getBoolean("FlashStatus", false)
+        isVibrate = alarmPreferences.getBoolean("VibrateStatus", false)
+
+        Log.d("TouchActivity", "onResume: Flash: $isFlash Vibrate: $isVibrate")
 
         if (isAlarmServiceActive) {
             // Create a new intent with the necessary extras
             val intent = Intent(this, EnterPinActivity::class.java).apply {
-                putExtra("Alarm", isAlarmActive)
                 putExtra("Flash", isFlash)
                 putExtra("Vibrate", isVibrate)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)

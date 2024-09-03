@@ -86,4 +86,5 @@
     <string name="email">Email</string>
     <string name="contact">Contact</string>
     <string name="linkedin">LinkedIn</string>
+    <string name="refresh">Refresh</string>
 </resources>

@@ -30,6 +30,7 @@ class OverChargeActivity : AppCompatActivity() {
     private var isFlash = false
     private var isBatteryServiceRunning = false
     private lateinit var sharedPreferences: SharedPreferences
+    private lateinit var alarmPreferences: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,6 +43,7 @@ class OverChargeActivity : AppCompatActivity() {
         }
 
         // Retrieving selected attempts, alert status
+        alarmPreferences = getSharedPreferences("PinAndService", MODE_PRIVATE)
         sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
         isAlarmActive = sharedPreferences.getBoolean("AlarmStatusOverCharge", false)
         isVibrate = sharedPreferences.getBoolean("VibrateStatusOverCharge", false)
@@ -141,13 +143,12 @@ class OverChargeActivity : AppCompatActivity() {
         super.onResume()
         val isAlarmServiceActive = sharedPreferences.getBoolean("AlarmServiceStatus", false)
         isAlarmActive = sharedPreferences.getBoolean("AlarmStatusOverCharge", false)
-        isFlash = sharedPreferences.getBoolean("FlashStatusOverCharge", false)
-        isVibrate = sharedPreferences.getBoolean("VibrateStatusOverCharge", false)
+        isFlash = alarmPreferences.getBoolean("FlashStatus", false)
+        isVibrate = alarmPreferences.getBoolean("VibrateStatus", false)
 
         if (isAlarmServiceActive) {
             // Create a new intent with the necessary extras
             val intent = Intent(this, EnterPinActivity::class.java).apply {
-                putExtra("Alarm", isAlarmActive)
                 putExtra("Flash", isFlash)
                 putExtra("Vibrate", isVibrate)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)

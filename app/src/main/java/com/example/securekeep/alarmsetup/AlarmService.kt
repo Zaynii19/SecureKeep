@@ -15,9 +15,9 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.PowerManager
+import android.os.VibrationAttributes
 import android.os.VibrationEffect
 import android.os.Vibrator
-import android.os.VibratorManager
 import android.util.Log
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
@@ -29,15 +29,16 @@ class AlarmService : Service() {
     private lateinit var wakeLock: PowerManager.WakeLock
     private var isVibrate = false
     private var isFlash = false
-    private var isAlarmActive = false
     private var fromPin = false
     private var currentSoundLevel = 0
     private var mediaPlayer: MediaPlayer? = null
     private lateinit var cameraManager: CameraManager
     private lateinit var cameraId: String
     private lateinit var handler: Handler
+    private val vibrationPattern = longArrayOf(0, 500, 500) // Wait, Vibrate for half sec, Wait for half sec
+    private lateinit var vibrator: Vibrator
     private lateinit var sharedPreferences: SharedPreferences
-    private lateinit var pinAlarmPreferences: SharedPreferences
+    private lateinit var alarmPreferences: SharedPreferences
     private lateinit var powerManager: PowerManager
     private lateinit var audioManager: AudioManager
     private val flashRunnable = object : Runnable {
@@ -56,7 +57,7 @@ class AlarmService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        pinAlarmPreferences = getSharedPreferences("PinAlarmPreferences", MODE_PRIVATE)
+        alarmPreferences = getSharedPreferences("PinAndService", MODE_PRIVATE)
         sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
         currentSoundLevel = sharedPreferences.getInt("SOUND_LEVEL", 70)
 
@@ -66,6 +67,7 @@ class AlarmService : Service() {
         powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
         handler = Handler()
         handler.post(volumeCheckRunnable)  // Start volume check task
+        vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
 
         val isAlarmServiceActive = true
         val editor = sharedPreferences.edit()
@@ -105,18 +107,21 @@ class AlarmService : Service() {
             fromPin = it!!.getBooleanExtra("FromPin", false)  // Retrieve fromPin
         }
         if (fromPin){
-            isAlarmActive = pinAlarmPreferences.getBoolean("AlarmStatus", false)
-            isFlash = pinAlarmPreferences.getBoolean("FlashStatus", false)
-            isVibrate = pinAlarmPreferences.getBoolean("VibrateStatus", false)
+            isFlash = alarmPreferences.getBoolean("FlashStatus", false)
+            isVibrate = alarmPreferences.getBoolean("VibrateStatus", false)
 
-            Log.d("AlarmService", "onStartCommand: FromPin: $fromPin Alarm: $isAlarmActive Flash: $isFlash Vibrate: $isVibrate")
+            Log.d("AlarmService", "onStartCommand: FromPin: $fromPin Flash: $isFlash Vibrate: $isVibrate")
         }else intent?.let {
             isVibrate = it.getBooleanExtra("Vibrate", false)
             isFlash = it.getBooleanExtra("Flash", false)
-            isAlarmActive = it.getBooleanExtra("Alarm", false)
 
-            Log.d("AlarmService", "onStartCommand2: Alarm: $isAlarmActive Flash: $isFlash Vibrate: $isVibrate")
+            Log.d("AlarmService", "onStartCommand2: Flash: $isFlash Vibrate: $isVibrate")
         }
+
+        val editor = alarmPreferences.edit()
+        editor.putBoolean("VibrateStatus", isVibrate)
+        editor.putBoolean("FlashStatus", isFlash)
+        editor.apply()
 
         startForegroundService()
         triggerAlarm()
@@ -140,8 +145,8 @@ class AlarmService : Service() {
         val intent = Intent(this, EnterPinActivity::class.java).apply {
             putExtra("Vibrate", isVibrate)
             putExtra("Flash", isFlash)
-            putExtra("Alarm", isAlarmActive)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            Log.d("AlarmService", "onNotiClick: Flash: $isFlash Vibrate: $isVibrate")
         }
         val pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
 
@@ -184,15 +189,7 @@ class AlarmService : Service() {
             isLooping = false // Set looping to false
         }
 
-        // Cancel vibration
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
-            val vibrator = vibratorManager.defaultVibrator
-            vibrator.cancel()
-        } else {
-            val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-            vibrator.cancel()
-        }
+        vibrator.cancel() // Stop vibration
 
         // Stop flashlight
         if (isFlash) {
@@ -207,15 +204,29 @@ class AlarmService : Service() {
     }
 
     private fun triggerVibration() {
-        val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
-            vibratorManager.defaultVibrator
-        } else {
-            getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-        }
-
-        if (vibrator.hasVibrator()) {
-            vibrator.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE))
+        when {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> {
+                // For API level 34 and above
+                val vibrationEffect = VibrationEffect.createWaveform(
+                    vibrationPattern,
+                    0 // Repeat indefinitely
+                )
+                vibrator.vibrate(vibrationEffect, VibrationAttributes.Builder()
+                    .setUsage(VibrationAttributes.USAGE_ALARM)
+                    .build())
+            }
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.O -> {
+                // For API levels 26 to 33
+                val vibrationEffect = VibrationEffect.createWaveform(
+                    vibrationPattern,
+                    0 // Repeat indefinitely
+                )
+                vibrator.vibrate(vibrationEffect)
+            }
+            else -> {
+                // For API levels below 26
+                vibrator.vibrate(vibrationPattern, 0) // Repeat indefinitely
+            }
         }
     }
 

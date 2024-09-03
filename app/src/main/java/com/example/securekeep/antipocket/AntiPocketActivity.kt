@@ -5,7 +5,6 @@ import android.content.SharedPreferences
 import android.graphics.Color
 import android.os.Bundle
 import android.os.CountDownTimer
-import android.util.Log
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -32,6 +31,7 @@ class AntiPocketActivity : AppCompatActivity() {
     private var isFlash = false
     private var isPocketServiceRunning = false
     private lateinit var sharedPreferences: SharedPreferences
+    private lateinit var alarmPreferences: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,6 +44,7 @@ class AntiPocketActivity : AppCompatActivity() {
         }
 
         // Retrieving selected attempts, alert status
+        alarmPreferences = getSharedPreferences("PinAndService", MODE_PRIVATE)
         sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
         isAlarmActive = sharedPreferences.getBoolean("AlarmStatusPocket", false)
         isVibrate = sharedPreferences.getBoolean("VibrateStatusPocket", false)
@@ -74,6 +75,9 @@ class AntiPocketActivity : AppCompatActivity() {
 
                 alertDialog.apply {
                     show()
+                    // Set title text color
+                    val titleView = findViewById<TextView>(androidx.appcompat.R.id.alertTitle)
+                    titleView?.setTextColor(Color.BLACK)
                     // Set message text color
                     findViewById<TextView>(android.R.id.message)?.setTextColor(Color.BLACK)
                 }
@@ -141,15 +145,12 @@ class AntiPocketActivity : AppCompatActivity() {
         super.onResume()
         val isAlarmServiceActive = sharedPreferences.getBoolean("AlarmServiceStatus", false)
         isAlarmActive = sharedPreferences.getBoolean("AlarmStatusPocket", false)
-        isFlash = sharedPreferences.getBoolean("FlashStatusPocket", false)
-        isVibrate = sharedPreferences.getBoolean("VibrateStatusPocket", false)
-
-        Log.d("PocketActivity", "onResume: Alarm: $isAlarmActive, Flash: $isFlash, Vibrate: $isVibrate")
+        isFlash = alarmPreferences.getBoolean("FlashStatus", false)
+        isVibrate = alarmPreferences.getBoolean("VibrateStatus", false)
 
         if (isAlarmServiceActive) {
             // Create a new intent with the necessary extras
             val intent = Intent(this, EnterPinActivity::class.java).apply {
-                putExtra("Alarm", isAlarmActive)
                 putExtra("Flash", isFlash)
                 putExtra("Vibrate", isVibrate)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)

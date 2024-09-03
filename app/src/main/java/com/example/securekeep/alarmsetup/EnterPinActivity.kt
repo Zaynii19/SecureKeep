@@ -15,9 +15,9 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.VibrationAttributes
 import android.os.VibrationEffect
 import android.os.Vibrator
-import android.os.VibratorManager
 import android.util.Log
 import android.view.View
 import android.widget.Toast
@@ -43,8 +43,9 @@ class EnterPinActivity : AppCompatActivity() {
     private var currentPin = ""
     private var isVibrate = false
     private var isFlash = false
-    private var isAlarmActive = false
     private var isAlarmServiceActive = false
+    private val vibrationPattern = longArrayOf(0, 500, 500) // Wait, Vibrate for 1 sec, Wait for 1 sec
+    private lateinit var vibrator: Vibrator
     var fromPin = false
     private var currentSoundLevel = 0
     private var mediaPlayer: MediaPlayer? = null
@@ -53,7 +54,7 @@ class EnterPinActivity : AppCompatActivity() {
     private lateinit var handler: Handler
     private lateinit var audioManager: AudioManager
     private lateinit var sharedPreferences: SharedPreferences
-    private lateinit var pinAlarmPreferences: SharedPreferences
+    private lateinit var alarmPreferences: SharedPreferences
     private lateinit var preferences: MyPreferences
 
     private val flashRunnable = object : Runnable {
@@ -86,22 +87,24 @@ class EnterPinActivity : AppCompatActivity() {
         cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
         cameraId = cameraManager.cameraIdList[0] // Assuming back camera
         handler = Handler(Looper.getMainLooper())
+        vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         preferences = MyPreferences(this@EnterPinActivity)
         handler.post(volumeCheckRunnable)  // Start volume check task
 
         // Initialize SharedPreferences
-        pinAlarmPreferences = getSharedPreferences("PinAlarmPreferences", MODE_PRIVATE)
+        alarmPreferences = getSharedPreferences("PinAndService", MODE_PRIVATE)
         sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
         currentPin = sharedPreferences.getString("USER_PIN", "")!!
         isAlarmServiceActive = sharedPreferences.getBoolean("AlarmServiceStatus",false)
         // Retrieve sound level from shared preferences
         currentSoundLevel = sharedPreferences.getInt("SOUND_LEVEL", 70)
-        setSystemSoundLevel(currentSoundLevel)
-
         // Retrieve the saved tone
         val toneId = sharedPreferences.getInt("alarm_tone", R.raw.alarm_tune_1)
         val toneUriString = sharedPreferences.getString("alarm_tone_uri", null)
         val systemToneUri = toneUriString?.let { Uri.parse(it) } // Convert to Uri if exists
+
+        // set sound and Create MediaPlayer based on tone URI or ID
+        setSystemSoundLevel(currentSoundLevel)
 
         // Create MediaPlayer based on tone URI or ID
         mediaPlayer = if (systemToneUri != null) {
@@ -123,20 +126,16 @@ class EnterPinActivity : AppCompatActivity() {
         }
 
         val intent = intent
-        isAlarmActive = intent.getBooleanExtra("Alarm", false)
         isVibrate = intent.getBooleanExtra("Vibrate", false)
         isFlash = intent.getBooleanExtra("Flash", false)
-
-        Log.d("PinActivity", "onCreate: Alarm: $isAlarmActive Flash: $isFlash Vibrate: $isVibrate")
 
 
         pinDots = arrayOf(
             binding.pinDot1, binding.pinDot2, binding.pinDot3, binding.pinDot4
         )
 
-        if (isAlarmServiceActive) {
-            stopAlarmService()
-        }
+        stopAlarmService()
+
 
         fromPin = false
 
@@ -214,8 +213,16 @@ class EnterPinActivity : AppCompatActivity() {
                 startActivity(Intent(this@EnterPinActivity, MainActivity::class.java))
                 finish()
             } else {
+                clearAllPinDots()
                 Toast.makeText(this, "Wrong Pin", Toast.LENGTH_SHORT).show()
             }
+        }
+    }
+
+    private fun clearAllPinDots() {
+        if (enteredPin.isNotEmpty()) {
+            enteredPin = ""
+            updatePinDots()
         }
     }
 
@@ -227,6 +234,8 @@ class EnterPinActivity : AppCompatActivity() {
         }
 
         if (isVibrate) {
+            // Cancel any existing vibration before starting a new one
+            vibrator.cancel()
             triggerVibration()
         }
 
@@ -246,16 +255,7 @@ class EnterPinActivity : AppCompatActivity() {
             isLooping = false // Set looping to false
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            // For Android 12 (API level 31) and above
-            val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
-            val vibrator = vibratorManager.defaultVibrator
-            vibrator.cancel()
-        } else {
-            // For Android versions below 12
-            val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-            vibrator.cancel()
-        }
+        vibrator.cancel() // Stop vibration
 
         handler.removeCallbacks(flashRunnable)
         if (isFlash) {
@@ -267,16 +267,28 @@ class EnterPinActivity : AppCompatActivity() {
     }
 
     private fun triggerVibration() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            // For Android 12 (API level 31) and above
-            val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
-            val vibrator = vibratorManager.defaultVibrator
-            vibrator.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE))
-        } else {
-            // For Android versions below 12
-            val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-            if (vibrator.hasVibrator()) {
-                vibrator.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE))
+        when {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> {
+                // For API level 34 and above
+                val vibrationEffect = VibrationEffect.createWaveform(
+                    vibrationPattern,
+                    0 // Repeat indefinitely
+                )
+                vibrator.vibrate(vibrationEffect, VibrationAttributes.Builder()
+                    .setUsage(VibrationAttributes.USAGE_ALARM)
+                    .build())
+            }
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.O -> {
+                // For API levels 26 to 33
+                val vibrationEffect = VibrationEffect.createWaveform(
+                    vibrationPattern,
+                    0 // Repeat indefinitely
+                )
+                vibrator.vibrate(vibrationEffect)
+            }
+            else -> {
+                // For API levels below 26
+                vibrator.vibrate(vibrationPattern, 0) // Repeat indefinitely
             }
         }
     }
@@ -295,13 +307,12 @@ class EnterPinActivity : AppCompatActivity() {
         super.onPause()
         fromPin = true
 
-        val editor = pinAlarmPreferences.edit()
-        editor.putBoolean("AlarmStatus", isAlarmActive)
+        val editor = alarmPreferences.edit()
         editor.putBoolean("VibrateStatus", isVibrate)
         editor.putBoolean("FlashStatus", isFlash)
         editor.apply()
 
-        Log.d("PinActivity", "onPause: Alarm: $isAlarmActive Flash: $isFlash Vibrate: $isVibrate")
+        Log.d("PinActivity", "onPause: Flash: $isFlash Vibrate: $isVibrate")
 
         stopAlarm()
         startAlarmService()
@@ -310,10 +321,13 @@ class EnterPinActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         val intent = intent
-        isAlarmActive = intent.getBooleanExtra("Alarm", false)
         isVibrate = intent.getBooleanExtra("Vibrate", false)
         isFlash = intent.getBooleanExtra("Flash", false)
+
+
         stopAlarmService()
+        // Re-initialize the Vibrator service
+        vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         triggerAlarm()
     }
 
@@ -328,7 +342,6 @@ class EnterPinActivity : AppCompatActivity() {
         val serviceIntent = Intent(this, AlarmService::class.java).apply {
             putExtra("Vibrate", isVibrate)
             putExtra("Flash", isFlash)
-            putExtra("Alarm", isAlarmActive)
             putExtra("FromPin", fromPin)  // Pass fromPin
         }
 
@@ -353,17 +366,16 @@ class EnterPinActivity : AppCompatActivity() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putBoolean("Alarm", isAlarmActive)
         outState.putBoolean("Vibrate", isVibrate)
         outState.putBoolean("Flash", isFlash)
     }
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
         super.onRestoreInstanceState(savedInstanceState)
-        isAlarmActive = savedInstanceState.getBoolean("Alarm", false)
         isVibrate = savedInstanceState.getBoolean("Vibrate", false)
         isFlash = savedInstanceState.getBoolean("Flash", false)
     }
+
     override fun onDestroy() {
         super.onDestroy()
         stopAlarm()

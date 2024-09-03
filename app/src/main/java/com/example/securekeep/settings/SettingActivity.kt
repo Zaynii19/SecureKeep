@@ -193,10 +193,15 @@ class SettingActivity : AppCompatActivity() {
                 }
             }
 
-            // Save tone ID and URI in shared preferences
+            // Save tone ID or URI in shared preferences
             val editor = sharedPreferences.edit()
-            editor.putInt("alarm_tone", toneId)
-            systemToneUri?.let { editor.putString("alarm_tone_uri", it.toString()) }
+            if (toneId == 0) { // If toneId is 0, it means a system tone is selected
+                systemToneUri?.let { editor.putString("alarm_tone_uri", it.toString()) }
+                editor.putInt("alarm_tone", 0) // Store 0 as toneId to indicate system tone
+            } else {
+                editor.putInt("alarm_tone", toneId)
+                editor.putString("alarm_tone_uri", null) // Clear system tone URI
+            }
             editor.apply()
 
             stopMediaPlayer() // Stop MediaPlayer explicitly before dismissing

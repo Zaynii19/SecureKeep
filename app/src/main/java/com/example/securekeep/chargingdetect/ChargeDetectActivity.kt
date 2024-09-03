@@ -1,5 +1,7 @@
 package com.example.securekeep.chargingdetect
 
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.SharedPreferences
@@ -32,6 +34,14 @@ class ChargeDetectActivity : AppCompatActivity() {
     private var isFlash = false
     private var isChargingServiceRunning = false
     private lateinit var sharedPreferences: SharedPreferences
+    private lateinit var alarmPreferences: SharedPreferences
+
+    // BroadcastReceiver to detect charging state changes
+    private val chargingReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            updateUI()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,13 +53,17 @@ class ChargeDetectActivity : AppCompatActivity() {
             insets
         }
 
+        // Register receiver for charging state changes
+        registerReceiver(chargingReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED), RECEIVER_EXPORTED)
+
         // Retrieving selected attempts, alert status
+        alarmPreferences = getSharedPreferences("PinAndService", MODE_PRIVATE)
         sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
         isAlarmActive = sharedPreferences.getBoolean("AlarmStatusCharge", false)
         isVibrate = sharedPreferences.getBoolean("VibrateStatusCharge", false)
         isFlash = sharedPreferences.getBoolean("FlashStatusCharge", false)
 
-        isChargingServiceRunning = MainActivity.isServiceRunning(this@ChargeDetectActivity, ChargingDetectionService::class.java)
+        isChargingServiceRunning = MainActivity.isServiceRunning(this, ChargingDetectionService::class.java)
 
         updateUI()
 
@@ -68,78 +82,73 @@ class ChargeDetectActivity : AppCompatActivity() {
             .setCancelable(false)
             .create()
 
-        if (isChargerConnected()) {
-            if (isAlarmActive) {
-                startChargingDetectionService()
-            }
-            updateUI()
-        } else {
-            Toast.makeText(this@ChargeDetectActivity, "Connect Charger First", Toast.LENGTH_SHORT).show()
-            binding.powerBtn.setImageResource(R.drawable.charger)
-            binding.powerBtn.setOnClickListener(null)
-        }
-
         binding.powerBtn.setOnClickListener {
-            if (isChargerConnected()) {
-                if (!isAlarmActive && !isChargingServiceRunning) {
-                    isAlarmActive = true
-
-                    alertDialog.apply {
-                        show()
-                        // Set title text color
-                        val titleView = findViewById<TextView>(androidx.appcompat.R.id.alertTitle)
-                        titleView?.setTextColor(Color.BLACK)
-                        // Set message text color
-                        findViewById<TextView>(android.R.id.message)?.setTextColor(Color.BLACK)
-                    }
-
-                    object : CountDownTimer(10000, 1000) {
-                        override fun onTick(millisUntilFinished: Long) {
-                            alertDialog.setMessage("00:${millisUntilFinished / 1000}")
-                        }
-
-                        override fun onFinish() {
-                            if (alertDialog.isShowing) {
-                                alertDialog.dismiss()
-                            }
-                            Toast.makeText(this@ChargeDetectActivity, "Charging Detection Mode Activated", Toast.LENGTH_SHORT).show()
-                            updateUI()
-                            startChargingDetectionService()
-                            // Storing alarm status value in shared preferences
-                            val editor = sharedPreferences.edit()
-                            editor.putBoolean("AlarmStatusCharge", isAlarmActive)
-                            editor.apply()
-                        }
-                    }.start()
-                } else {
-                    stopChargingDetection()
-                }
-            } else {
-                Toast.makeText(this@ChargeDetectActivity, "Connect Charger First", Toast.LENGTH_SHORT).show()
-            }
+            handlePowerButtonClick()
         }
 
         binding.switchBtnV.setOnClickListener {
-            isVibrate = !isVibrate
-            binding.switchBtnV.setImageResource(if (isVibrate) R.drawable.switch_on else R.drawable.switch_off)
-            Toast.makeText(this, if (isVibrate) "Vibration Enabled" else "Vibration Disabled", Toast.LENGTH_SHORT).show()
-
-            // Storing vibrate status value in shared preferences
-            val editor = sharedPreferences.edit()
-            editor.putBoolean("VibrateStatusCharge", isVibrate)
-            editor.apply()
+            toggleVibration()
         }
 
         binding.switchBtnF.setOnClickListener {
-            isFlash = !isFlash
-            binding.switchBtnF.setImageResource(if (isFlash) R.drawable.switch_on else R.drawable.switch_off)
-            Toast.makeText(this, if (isFlash) "Flash Turned on" else "Flash Turned off", Toast.LENGTH_SHORT).show()
-
-            // Storing flash status value in shared preferences
-            val editor = sharedPreferences.edit()
-            editor.putBoolean("FlashStatusCharge", isFlash)
-            editor.apply()
+            toggleFlash()
         }
+    }
+
+    private fun handlePowerButtonClick() {
+        if (isChargerConnected()) {
+            if (!isAlarmActive && !isChargingServiceRunning) {
+                isAlarmActive = true
+
+                alertDialog.apply {
+                    show()
+                    // Set title text color
+                    val titleView = findViewById<TextView>(androidx.appcompat.R.id.alertTitle)
+                    titleView?.setTextColor(Color.BLACK)
+                    // Set message text color
+                    findViewById<TextView>(android.R.id.message)?.setTextColor(Color.BLACK)
+                }
+
+                object : CountDownTimer(10000, 1000) {
+                    override fun onTick(millisUntilFinished: Long) {
+                        alertDialog.setMessage("00:${millisUntilFinished / 1000}")
+                    }
+
+                    override fun onFinish() {
+                        if (alertDialog.isShowing) {
+                            alertDialog.dismiss()
+                        }
+                        Toast.makeText(this@ChargeDetectActivity, "Charging Detection Mode Activated", Toast.LENGTH_SHORT).show()
+                        updateUI()
+                        startChargingDetectionService()
+                        // Storing alarm status value in shared preferences
+                        sharedPreferences.edit().putBoolean("AlarmStatusCharge", isAlarmActive).apply()
+                    }
+                }.start()
+            } else {
+                stopChargingDetection()
+            }
+        } else {
+            Toast.makeText(this@ChargeDetectActivity, "Connect Charger First", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun toggleVibration() {
+        isVibrate = !isVibrate
+        binding.switchBtnV.setImageResource(if (isVibrate) R.drawable.switch_on else R.drawable.switch_off)
+        Toast.makeText(this, if (isVibrate) "Vibration Enabled" else "Vibration Disabled", Toast.LENGTH_SHORT).show()
+
+        // Storing vibrate status value in shared preferences
+        sharedPreferences.edit().putBoolean("VibrateStatusCharge", isVibrate).apply()
+    }
+
+    private fun toggleFlash() {
+        isFlash = !isFlash
+        binding.switchBtnF.setImageResource(if (isFlash) R.drawable.switch_on else R.drawable.switch_off)
+        Toast.makeText(this, if (isFlash) "Flash Turned on" else "Flash Turned off", Toast.LENGTH_SHORT).show()
+
+        // Storing flash status value in shared preferences
+        sharedPreferences.edit().putBoolean("FlashStatusCharge", isFlash).apply()
     }
 
     private fun updateUI() {
@@ -156,7 +165,7 @@ class ChargeDetectActivity : AppCompatActivity() {
     }
 
     private fun stopChargingDetection() {
-        Toast.makeText(this@ChargeDetectActivity, "Wifi Detection Mode Deactivated", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "Charging Detection Mode Deactivated", Toast.LENGTH_SHORT).show()
         binding.powerBtn.setImageResource(R.drawable.power_on)
         binding.activateText.text = getString(R.string.tap_to_activate)
         isAlarmActive = false
@@ -170,11 +179,12 @@ class ChargeDetectActivity : AppCompatActivity() {
         updateUI()
 
         // Storing alarm status value in shared preferences
-        val editor = sharedPreferences.edit()
-        editor.putBoolean("AlarmStatusCharge", isAlarmActive)
-        editor.putBoolean("FlashStatusCharge", isFlash)
-        editor.putBoolean("VibrateStatusCharge", isVibrate)
-        editor.apply()
+        sharedPreferences.edit().apply {
+            putBoolean("AlarmStatusCharge", isAlarmActive)
+            putBoolean("FlashStatusCharge", isFlash)
+            putBoolean("VibrateStatusCharge", isVibrate)
+            apply()
+        }
 
         stopChargingDetectionService()
     }
@@ -183,13 +193,12 @@ class ChargeDetectActivity : AppCompatActivity() {
         super.onResume()
         val isAlarmServiceActive = sharedPreferences.getBoolean("AlarmServiceStatus", false)
         isAlarmActive = sharedPreferences.getBoolean("AlarmStatusCharge", false)
-        isFlash = sharedPreferences.getBoolean("FlashStatusCharge", false)
-        isVibrate = sharedPreferences.getBoolean("VibrateStatusCharge", false)
+        isFlash = alarmPreferences.getBoolean("FlashStatus", false)
+        isVibrate = alarmPreferences.getBoolean("VibrateStatus", false)
 
         if (isAlarmServiceActive) {
             // Create a new intent with the necessary extras
             val intent = Intent(this, EnterPinActivity::class.java).apply {
-                putExtra("Alarm", isAlarmActive)
                 putExtra("Flash", isFlash)
                 putExtra("Vibrate", isVibrate)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
@@ -197,6 +206,11 @@ class ChargeDetectActivity : AppCompatActivity() {
             startActivity(intent)
             finish() // Finish this activity to prevent returning to it
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        unregisterReceiver(chargingReceiver)
     }
 
     private fun isChargerConnected(): Boolean {

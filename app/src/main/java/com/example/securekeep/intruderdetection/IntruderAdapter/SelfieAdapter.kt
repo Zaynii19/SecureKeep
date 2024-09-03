@@ -3,6 +3,7 @@ package com.example.securekeep.intruderdetection.IntruderAdapter
 import android.content.Context
 import android.content.Intent
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
@@ -37,7 +38,22 @@ class SelfieAdapter(
 
     override fun onBindViewHolder(holder: CollectionsHolder, position: Int) {
         val selfie = selfieList[position]
-        holder.binding.dateTime.text = selfie.dateTime
+
+        // Directly use the formatted dateTime from selfieList
+        val formattedDateTime = selfie.dateTime
+
+        // Split the formatted dateTime into date and time
+        val dateTimeParts = formattedDateTime.split(" ", limit = 2)
+        val date = dateTimeParts.getOrElse(0) { "" }
+        val time = dateTimeParts.getOrElse(1) { "" }
+
+        // Set date and time on separate lines
+        holder.binding.dateTime.text = buildString {
+            append(date)
+            append("\n")
+            append(time)
+        }
+
         Glide.with(context)
             .load(selfie.imageUri)
             .apply(RequestOptions().placeholder(R.drawable.camera))
@@ -53,8 +69,10 @@ class SelfieAdapter(
         // Change background color based on selection state
         if (selectedItems.contains(position)) {
             holder.binding.root.background = ContextCompat.getDrawable(context, R.drawable.selected_item_round_boarder)
+            holder.binding.checked.visibility = View.VISIBLE
         } else {
             holder.binding.root.background = ContextCompat.getDrawable(context, R.drawable.simple_round_boarder)
+            holder.binding.checked.visibility = View.INVISIBLE
         }
 
         holder.binding.root.setOnClickListener {

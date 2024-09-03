@@ -11,6 +11,7 @@ import android.graphics.Color
 import android.media.AudioManager
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.view.View
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -37,6 +38,7 @@ class EarphonesActivity : AppCompatActivity() {
     private var isFlash = false
     private var isEarphoneServiceRunning = false
     private lateinit var sharedPreferences: SharedPreferences
+    private lateinit var alarmPreferences: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,6 +51,7 @@ class EarphonesActivity : AppCompatActivity() {
         }
 
         // Retrieving selected attempts, alert status
+        alarmPreferences = getSharedPreferences("PinAndService", MODE_PRIVATE)
         sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
         isAlarmActive = sharedPreferences.getBoolean("AlarmStatusEarphone", false)
         isVibrate = sharedPreferences.getBoolean("VibrateStatusEarphone", false)
@@ -79,10 +82,15 @@ class EarphonesActivity : AppCompatActivity() {
                 startEarphoneDetectionService()
             }
             updateUI()
+            binding.refreshBtn.visibility = View.VISIBLE
+            binding.refreshBtn.setOnClickListener {
+                updateUI()
+            }
         } else {
             Toast.makeText(this@EarphonesActivity, "Connect Earphones First", Toast.LENGTH_SHORT).show()
             binding.powerBtn.setImageResource(R.drawable.charger)
             binding.powerBtn.setOnClickListener(null)
+            binding.refreshBtn.visibility = View.INVISIBLE
         }
 
         binding.powerBtn.setOnClickListener {
@@ -152,13 +160,12 @@ class EarphonesActivity : AppCompatActivity() {
         super.onResume()
         val isAlarmServiceActive = sharedPreferences.getBoolean("AlarmServiceStatus", false)
         isAlarmActive = sharedPreferences.getBoolean("AlarmStatusEarphone", false)
-        isFlash = sharedPreferences.getBoolean("FlashStatusEarphone", false)
-        isVibrate = sharedPreferences.getBoolean("VibrateStatusEarphone", false)
+        isFlash = alarmPreferences.getBoolean("FlashStatus", false)
+        isVibrate = alarmPreferences.getBoolean("VibrateStatus", false)
 
         if (isAlarmServiceActive) {
             // Create a new intent with the necessary extras
             val intent = Intent(this, EnterPinActivity::class.java).apply {
-                putExtra("Alarm", isAlarmActive)
                 putExtra("Flash", isFlash)
                 putExtra("Vibrate", isVibrate)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)

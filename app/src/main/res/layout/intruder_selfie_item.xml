@@ -9,8 +9,8 @@
 
     <ImageView
         android:id="@+id/intruderSelfie"
-        android:layout_width="120dp"
-        android:layout_height="150dp"
+        android:layout_width="160dp"
+        android:layout_height="160dp"
         android:layout_margin="10dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -22,23 +22,25 @@
         android:id="@+id/dateTime"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="10dp"
+        android:layout_marginStart="@dimen/_10sdp"
         android:text="@string/_2024_08_03_09_46_pm"
         android:textColor="@color/black"
         android:textSize="16sp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/intruderSelfie" />
+        app:layout_constraintStart_toEndOf="@+id/intruderSelfie"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <ImageView
         android:id="@+id/checked"
         android:layout_width="@dimen/_20sdp"
         android:layout_height="@dimen/_20sdp"
         android:layout_marginEnd="@dimen/_20sdp"
-        app:layout_constraintBottom_toTopOf="@+id/dateTime"
+        android:visibility="visible"
+        android:layout_marginStart="@dimen/_10sdp"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/dateTime"
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/checked"
-        app:tint="@color/green"
-        android:visibility="gone"/>
+        app:tint="@color/green" />
 </androidx.constraintlayout.widget.ConstraintLayout>
