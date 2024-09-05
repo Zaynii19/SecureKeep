@@ -103,7 +103,7 @@ abstract class HiddenCameraService : Service(), CameraCallbacks {
     /**
      * Stop and release the camera forcefully.
      */
-    protected fun stopCamera() {
+    private fun stopCamera() {
         if (mCameraPreview != null) {
             mWindowManager!!.removeView(mCameraPreview)
             mCameraPreview!!.stopPreviewAndFreeCamera()
@@ -127,12 +127,6 @@ abstract class HiddenCameraService : Service(), CameraCallbacks {
 
         mWindowManager = getSystemService(WINDOW_SERVICE) as WindowManager
 
-        //        params = new WindowManager.LayoutParams(1, 1,
-//                Build.VERSION.SDK_INT < Build.VERSION_CODES.O ?
-//                        WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY :
-//                        WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-//                WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
-//                PixelFormat.TRANSLUCENT);
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT,

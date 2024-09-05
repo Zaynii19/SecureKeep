@@ -1,28 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="160dp"
-    android:layout_margin="10dp"
+    android:layout_height="@dimen/_150sdp"
+    android:layout_margin="@dimen/_8sdp"
     android:background="@drawable/simple_round_boarder">
 
     <ImageView
         android:id="@+id/intruderSelfie"
-        android:layout_width="160dp"
-        android:layout_height="160dp"
-        android:layout_margin="10dp"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/_120sdp"
+        android:layout_marginStart="@dimen/_10sdp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.96"
         app:srcCompat="@drawable/camera" />
 
     <TextView
         android:id="@+id/dateTime"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="@dimen/_10sdp"
+        android:layout_marginStart="@dimen/_30sdp"
         android:text="@string/_2024_08_03_09_46_pm"
         android:textColor="@color/black"
         android:textSize="16sp"

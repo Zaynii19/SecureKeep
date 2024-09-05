@@ -191,7 +191,7 @@ internal class CameraPreview(context: Context, cameraCallbacks: CameraCallbacks)
 
                     //Rotate the bitmap
                     val rotatedBitmap: Bitmap?
-                    if (mCameraConfig!!.imageRotation !== CameraRotation.ROTATION_0) {
+                    if (mCameraConfig!!.imageRotation != CameraRotation.ROTATION_0) {
                         rotatedBitmap = HiddenCameraUtils.rotateBitmap(
                             bitmap,
                             mCameraConfig!!.imageRotation

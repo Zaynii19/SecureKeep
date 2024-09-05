@@ -7,10 +7,12 @@ import android.os.Bundle
 import android.os.Environment
 import android.util.Log
 import android.view.View
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -106,17 +108,24 @@ class IntruderSelfieActivity : AppCompatActivity() {
         val builder = MaterialAlertDialogBuilder(this)
         builder.setTitle("Delete")
             .setMessage("Do you want to delete the selected intruder pictures?")
+            .setBackground(ContextCompat.getDrawable(this, R.drawable.simple_round_boarder))
             .setPositiveButton("Yes") { _, _ ->
                 deleteSelectedImages()
             }
             .setNegativeButton("No") { dialog, _ ->
                 dialog.dismiss()
             }
-
-        val exitDialog = builder.create()
-        exitDialog.show()
-        exitDialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.GREEN)
-        exitDialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.GREEN)
+            .create().apply {
+                show()
+                // Set title text color
+                val titleView = findViewById<TextView>(androidx.appcompat.R.id.alertTitle)
+                titleView?.setTextColor(Color.BLACK)
+                // Set message text color
+                findViewById<TextView>(android.R.id.message)?.setTextColor(Color.BLACK)
+                // Set button color
+                getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.GREEN)
+                getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.GREEN)
+            }
     }
 
     private fun deleteSelectedImages() {

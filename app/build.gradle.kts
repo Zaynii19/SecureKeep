@@ -36,6 +36,14 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+
+    // for email feature
+    packaging {
+        resources {
+            excludes.add("META-INF/NOTICE.md")
+            excludes.add("META-INF/LICENSE.md")
+        }
+    }
 }
 
 dependencies {
@@ -55,5 +63,9 @@ dependencies {
     implementation (libs.glide)
     implementation (libs.ssp.android)
     implementation (libs.sdp.android)
+
+    implementation(libs.mailjet.client)
+    implementation (libs.kotlinx.coroutines.core)
+    implementation (libs.kotlinx.coroutines.android)
 
 }
