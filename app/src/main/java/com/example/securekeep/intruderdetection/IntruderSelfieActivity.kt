@@ -1,6 +1,7 @@
 package com.example.securekeep.intruderdetection
 
 import android.content.Intent
+import android.content.SharedPreferences
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
@@ -29,8 +30,10 @@ class IntruderSelfieActivity : AppCompatActivity() {
     private val binding by lazy {
         ActivityIntruderSelfieBinding.inflate(layoutInflater)
     }
+    private lateinit var sharedPreferences: SharedPreferences
     private lateinit var selfieAdapter: SelfieAdapter
     private lateinit var selfieList: MutableList<SelfieModel>
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,10 +46,7 @@ class IntruderSelfieActivity : AppCompatActivity() {
             insets
         }
 
-        binding.backBtn.setOnClickListener {
-            startActivity(Intent(this@IntruderSelfieActivity, IntruderActivity::class.java))
-            finish()
-        }
+        sharedPreferences = getSharedPreferences("IntruderPrefs", MODE_PRIVATE)
 
         selfieList = mutableListOf()
         binding.rcv.layoutManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
@@ -54,6 +54,12 @@ class IntruderSelfieActivity : AppCompatActivity() {
         binding.rcv.adapter = selfieAdapter
         binding.rcv.setHasFixedSize(true)
         binding.rcv.setItemViewCacheSize(13)
+
+
+        binding.backBtn.setOnClickListener {
+            startActivity(Intent(this@IntruderSelfieActivity, IntruderActivity::class.java))
+            finish()
+        }
 
         // Initially hide action buttons
         updateActionButtonVisibility()
@@ -81,6 +87,9 @@ class IntruderSelfieActivity : AppCompatActivity() {
     }
 
     private fun loadSelfiesFromStorage() {
+        // Clear the existing list to avoid duplicates
+        selfieList.clear()
+
         val storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
 
         if (storageDir != null && storageDir.exists()) {
@@ -149,5 +158,9 @@ class IntruderSelfieActivity : AppCompatActivity() {
             binding.selectAllBtn.visibility = View.GONE
             binding.delBtn.visibility = View.GONE
         }
+    }
+
+    companion object {
+
     }
 }

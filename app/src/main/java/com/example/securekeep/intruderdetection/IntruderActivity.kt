@@ -6,9 +6,11 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Color
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.os.Environment
 import android.util.Log
 import android.view.View
 import android.widget.RadioButton
@@ -25,10 +27,14 @@ import androidx.core.view.WindowInsetsCompat
 import com.example.securekeep.MainActivity
 import com.example.securekeep.R
 import com.example.securekeep.databinding.ActivityIntruderBinding
+import com.example.securekeep.intruderdetection.IntruderAdapter.SelfieModel
 import com.example.securekeep.intruderdetection.IntruderServices.IntruderTrackingService
 import com.example.securekeep.intruderdetection.IntruderServices.MyDeviceAdminReceiver
 import com.example.securekeep.settings.EmailActivity
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class IntruderActivity : AppCompatActivity() {
     private val binding by lazy {
@@ -42,6 +48,8 @@ class IntruderActivity : AppCompatActivity() {
     private lateinit var devicePolicyManager: DevicePolicyManager
     private lateinit var compName: ComponentName
     private lateinit var sharedPreferences: SharedPreferences
+    private lateinit var selfieList: MutableList<SelfieModel>
+    private var currentSelfieCount = 0
 
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -55,6 +63,7 @@ class IntruderActivity : AppCompatActivity() {
             insets
         }
 
+        selfieList = mutableListOf()
         devicePolicyManager = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
         compName = ComponentName(this, MyDeviceAdminReceiver::class.java)
         sharedPreferences = getSharedPreferences("IntruderPrefs", MODE_PRIVATE)
@@ -62,11 +71,6 @@ class IntruderActivity : AppCompatActivity() {
         // Check if the app is already a device admin
         if (!devicePolicyManager.isAdminActive(compName)) {
             requestDeviceAdmin()
-        }
-
-        binding.backBtn.setOnClickListener {
-            startActivity(Intent(this@IntruderActivity, MainActivity::class.java))
-            finish()
         }
 
         isIntruderServiceRunning = MainActivity.isServiceRunning(this@IntruderActivity, IntruderTrackingService::class.java)
@@ -77,6 +81,16 @@ class IntruderActivity : AppCompatActivity() {
         attemptThreshold = sharedPreferences.getInt("AttemptThreshold", 2)
         binding.selectedAttempts.text = attemptThreshold.toString()
 
+        loadSelfiesFromStorage()
+        binding.picsCount.text = buildString {
+            append("View all ")
+            append(currentSelfieCount)
+        }
+
+        binding.backBtn.setOnClickListener {
+            startActivity(Intent(this@IntruderActivity, MainActivity::class.java))
+            finish()
+        }
 
         updatePowerButton()
 
@@ -161,6 +175,12 @@ class IntruderActivity : AppCompatActivity() {
         super.onResume()
         alertStatus = sharedPreferences.getBoolean("AlertStatus", false)
         updatePowerButton()
+
+        loadSelfiesFromStorage()
+        binding.picsCount.text = buildString {
+            append("View all ")
+            append(currentSelfieCount)
+        }
     }
 
     private fun requestDeviceAdmin() {
@@ -231,5 +251,33 @@ class IntruderActivity : AppCompatActivity() {
 
     companion object {
         private const val REQUEST_CODE_ENABLE_ADMIN = 1
+    }
+
+    private fun loadSelfiesFromStorage() {
+        // Clear the existing list to avoid duplicates
+        selfieList.clear()
+
+        val storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+
+        if (storageDir != null && storageDir.exists()) {
+            val imageFiles = storageDir.listFiles { file ->
+                file.isFile && (file.extension == "jpg" || file.extension == "jpeg" || file.extension == "png")
+            }
+
+            val dateFormatter = SimpleDateFormat("yyyy/MM/dd hh:mm a", Locale.getDefault())
+
+            imageFiles?.forEach { file ->
+                val imageUri = Uri.fromFile(file)
+                val dateTaken = dateFormatter.format(Date(file.lastModified()))
+                selfieList.add(SelfieModel(imageUri, dateTaken))
+            }
+
+            currentSelfieCount = selfieList.size
+
+        } else {
+            Log.e("IntruderActivity", "Storage directory not found or is empty.")
+        }
+
+        Log.d("IntruderActivity", "loadSelfiesFromStorage: Loaded ${selfieList.size} images")
     }
 }

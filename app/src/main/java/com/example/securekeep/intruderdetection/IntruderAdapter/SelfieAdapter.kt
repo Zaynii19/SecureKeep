@@ -80,6 +80,10 @@ class SelfieAdapter(
                 toggleSelection(position)
             } else {
                 // Normal click action here
+                val intent = Intent(context, FullPictureActivity::class.java).apply {
+                    putExtra("SelfieUri", selfie.imageUri.toString())
+                }
+                context.startActivity(intent)
             }
         }
     }
