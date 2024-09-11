@@ -53,6 +53,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.SecureKeep">
         <activity
+            android:name=".settings.ConfirmPinActivity"
+            android:exported="false" />
+        <activity
+            android:name=".settings.EmailActivity"
+            android:exported="false" />
+        <activity
             android:name=".AboutActivity"
             android:exported="false" />
         <activity

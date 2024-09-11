@@ -230,4 +230,118 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/getEmail"
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:layout_margin="16dp"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/viewIntruderPic"
+        android:background="@drawable/simple_round_boarder">
+
+        <ImageButton
+            android:id="@+id/emailPic"
+            style="@style/Widget.AppCompat.Button.Borderless"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_gravity="center"
+            android:contentDescription="@string/back"
+            android:scaleType="fitCenter"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/email"
+            app:tint="@color/black" />
+
+
+        <LinearLayout
+            android:id="@+id/linearLayout6"
+            android:layout_width="170dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="vertical"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/emailPic"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/get_intruder_by_email"
+                android:textColor="@color/black"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/sends_intruder_picture_by_email"
+                android:textColor="@color/black"
+                android:textSize="14sp" />
+
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/emailSwitch"
+            style="@style/Widget.AppCompat.Button.Borderless"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:contentDescription="@string/switchbtn"
+            android:padding="15dp"
+            android:layout_marginEnd="@dimen/_10sdp"
+            android:scaleType="fitCenter"
+            app:srcCompat="@drawable/switch_off"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <LinearLayout
+        android:id="@+id/setEmailBtn"
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:layout_margin="20dp"
+        android:layout_marginTop="336dp"
+        android:visibility="gone"
+        android:background="@drawable/simple_round_boarder"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/getEmail">
+
+        <ImageButton
+            android:id="@+id/emailPic2"
+            style="@style/Widget.AppCompat.Button.Borderless"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:contentDescription="@string/back"
+            android:scaleType="fitCenter"
+            android:layout_gravity="center"
+            app:srcCompat="@drawable/email"
+            app:tint="@color/black" />
+
+        <TextView
+            android:id="@+id/textView12"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="3"
+            android:gravity="start"
+            android:text="@string/set_email_account"
+            android:textColor="@color/black"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <ImageView
+            android:id="@+id/imageView5"
+            android:layout_width="15dp"
+            android:layout_height="15dp"
+            android:layout_gravity="center"
+            android:layout_marginEnd="10dp"
+            android:src="@drawable/right_back" />
+    </LinearLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

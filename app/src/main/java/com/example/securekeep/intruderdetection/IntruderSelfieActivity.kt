@@ -74,6 +74,12 @@ class IntruderSelfieActivity : AppCompatActivity() {
         }
     }
 
+    override fun onBackPressed() {
+        super.onBackPressed()
+        startActivity(Intent(this@IntruderSelfieActivity, IntruderActivity::class.java))
+        finish()
+    }
+
     private fun loadSelfiesFromStorage() {
         val storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
 

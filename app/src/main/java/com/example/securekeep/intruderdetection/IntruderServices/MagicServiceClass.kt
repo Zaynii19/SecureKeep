@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -46,11 +47,20 @@ import java.util.Random
 
 
 class MagicServiceClass : HiddenCameraService() {
-
+    private var isEmail = false
+    private lateinit var sharedPreferences: SharedPreferences
+    private var userEmail = ""
     override fun onCreate() {
         super.onCreate()
         startForegroundService()
         Log.d("MagicService", "onCreate: Camera Service Started")
+
+        sharedPreferences = getSharedPreferences("IntruderPrefs", MODE_PRIVATE)
+        isEmail = sharedPreferences.getBoolean("EmailStatus", false)
+        userEmail = sharedPreferences.getString("UserEmail", "") ?: ""
+
+        Log.d("MagicService", "onCreate: UserEmail: $userEmail")
+
     }
 
     override fun onBind(intent: Intent?): IBinder? {
@@ -229,8 +239,11 @@ class MagicServiceClass : HiddenCameraService() {
             }
             Log.d("MagicService", "onImageCapture: Image saved successfully: ${imageFileToSave.absolutePath}")
 
-            // Send the image via email
-            sendEmailWithImageWithCoroutine(imageFile)
+            if (isEmail){
+                // Send the image via email
+                sendEmailWithImageWithCoroutine(imageFile)
+            }
+
         } catch (e: Exception) {
             e.printStackTrace()
             Log.d("MagicService", "onImageCapture: Error saving image")
@@ -269,7 +282,7 @@ class MagicServiceClass : HiddenCameraService() {
                     put(
                         Emailv31.Message.TO, JSONArray().put(
                             JSONObject().apply {
-                                put("Email", "hassanniazi329@gmail.com")
+                                put("Email", userEmail)
                             }
                         )
                     )

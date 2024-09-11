@@ -31,6 +31,7 @@ import com.example.securekeep.MainActivity
 import com.example.securekeep.MyPreferences
 import com.example.securekeep.R
 import com.example.securekeep.databinding.ActivityEnterPinBinding
+import com.example.securekeep.settings.CreatePinActivity
 import java.io.IOException
 
 class EnterPinActivity : AppCompatActivity() {
@@ -44,9 +45,10 @@ class EnterPinActivity : AppCompatActivity() {
     private var isVibrate = false
     private var isFlash = false
     private var isAlarmServiceActive = false
+    private var fromChangePin = false
     private val vibrationPattern = longArrayOf(0, 500, 500) // Wait, Vibrate for 1 sec, Wait for 1 sec
     private lateinit var vibrator: Vibrator
-    var fromPin = false
+    private var fromPin = false
     private var currentSoundLevel = 0
     private var mediaPlayer: MediaPlayer? = null
     private lateinit var cameraManager: CameraManager
@@ -96,6 +98,7 @@ class EnterPinActivity : AppCompatActivity() {
         sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
         currentPin = sharedPreferences.getString("USER_PIN", "")!!
         isAlarmServiceActive = sharedPreferences.getBoolean("AlarmServiceStatus",false)
+
         // Retrieve sound level from shared preferences
         currentSoundLevel = sharedPreferences.getInt("SOUND_LEVEL", 70)
         // Retrieve the saved tone
@@ -128,6 +131,7 @@ class EnterPinActivity : AppCompatActivity() {
         val intent = intent
         isVibrate = intent.getBooleanExtra("Vibrate", false)
         isFlash = intent.getBooleanExtra("Flash", false)
+        fromChangePin = intent.getBooleanExtra("FromChangePin", false)
 
 
         pinDots = arrayOf(
@@ -199,7 +203,6 @@ class EnterPinActivity : AppCompatActivity() {
     private fun pinCheck() {
         if (enteredPin.length == 4) {
             if (enteredPin == currentPin) {
-
                 stopAlarm()
                 stopAlarmService()
 
@@ -208,16 +211,35 @@ class EnterPinActivity : AppCompatActivity() {
                 editor.putBoolean("AlarmServiceStatus", isAlarmServiceActive)
                 editor.apply()
 
-                val resultIntent = Intent()
-                setResult(Activity.RESULT_OK, resultIntent)
-                startActivity(Intent(this@EnterPinActivity, MainActivity::class.java))
-                finish()
+                // Call a separate method to handle post authentication
+                handleSuccessfulPinEntry()
             } else {
                 clearAllPinDots()
                 Toast.makeText(this, "Wrong Pin", Toast.LENGTH_SHORT).show()
             }
         }
     }
+
+    private fun handleSuccessfulPinEntry() {
+        Log.d("PinActivity", "handleSuccessfulPinEntry: From: $fromChangePin")
+        if (fromChangePin) {
+            val intent = Intent(this@EnterPinActivity, CreatePinActivity::class.java)
+            intent.putExtra("CHANGE_PIN", true)
+            // Instead of calling finish(), you can just start the activity
+            startActivity(intent)
+        } else {
+            val resultIntent = Intent()
+            setResult(Activity.RESULT_OK, resultIntent)
+            startActivity(Intent(this@EnterPinActivity, MainActivity::class.java))
+        }
+
+        // Only finish this activity after starting the new one to avoid premature closure
+        // Optionally, check if the current activity is not finishing already
+        if (!isFinishing) {
+            finish() // Finish this activity only after starting the new one
+        }
+    }
+
 
     private fun clearAllPinDots() {
         if (enteredPin.isNotEmpty()) {
@@ -381,6 +403,14 @@ class EnterPinActivity : AppCompatActivity() {
         stopAlarm()
         if (enteredPin == currentPin){
             stopAlarmService()
+            if (fromChangePin){
+                val intent = Intent(this@EnterPinActivity, CreatePinActivity::class.java)
+                intent.putExtra("CHANGE_PIN", true)
+                finish()
+            }else{
+                startActivity(Intent(this@EnterPinActivity, MainActivity::class.java))
+                finish()
+            }
         }else{
             startAlarmService()
         }

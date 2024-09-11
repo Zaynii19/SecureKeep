@@ -10,6 +10,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.util.Log
+import android.view.View
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.TextView
@@ -26,6 +27,7 @@ import com.example.securekeep.R
 import com.example.securekeep.databinding.ActivityIntruderBinding
 import com.example.securekeep.intruderdetection.IntruderServices.IntruderTrackingService
 import com.example.securekeep.intruderdetection.IntruderServices.MyDeviceAdminReceiver
+import com.example.securekeep.settings.EmailActivity
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class IntruderActivity : AppCompatActivity() {
@@ -35,10 +37,12 @@ class IntruderActivity : AppCompatActivity() {
     private var attemptThreshold = 2 // Default threshold value
     private var alertStatus = false
     private var isIntruderServiceRunning = false
+    private var isEmail = false
     private lateinit var alertDialog: AlertDialog
     private lateinit var devicePolicyManager: DevicePolicyManager
     private lateinit var compName: ComponentName
     private lateinit var sharedPreferences: SharedPreferences
+
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -69,6 +73,7 @@ class IntruderActivity : AppCompatActivity() {
 
         // Retrieving selected attempts and alert status
         alertStatus = sharedPreferences.getBoolean("AlertStatus", false)
+        isEmail = sharedPreferences.getBoolean("EmailStatus", false)
         attemptThreshold = sharedPreferences.getInt("AttemptThreshold", 2)
         binding.selectedAttempts.text = attemptThreshold.toString()
 
@@ -133,6 +138,23 @@ class IntruderActivity : AppCompatActivity() {
             startActivity(Intent(this@IntruderActivity, IntruderSelfieActivity::class.java))
             finish()
         }
+
+        binding.emailSwitch.setOnClickListener {
+            isEmail = !isEmail
+            binding.emailSwitch.setImageResource(if (isEmail) R.drawable.switch_on else R.drawable.switch_off)
+            Toast.makeText(this, if (isEmail) "Email Feature Enable" else "Email Feature disable", Toast.LENGTH_SHORT).show()
+
+            updatePowerButton()
+
+            // Storing email status value in shared preferences
+            val editor = sharedPreferences.edit()
+            editor.putBoolean("EmailStatus", isEmail)
+            editor.apply()
+        }
+
+        binding.setEmailBtn.setOnClickListener {
+            startActivity(Intent(this@IntruderActivity, EmailActivity::class.java))
+        }
     }
 
     override fun onResume() {
@@ -160,6 +182,13 @@ class IntruderActivity : AppCompatActivity() {
         } else {
             binding.powerBtn.setImageResource(R.drawable.power_on)
             binding.activateText.text = getString(R.string.tap_to_activate)
+        }
+
+        binding.emailSwitch.setImageResource(if (isEmail) R.drawable.switch_on else R.drawable.switch_off)
+        if (isEmail){
+            binding.setEmailBtn.visibility = View.VISIBLE
+        }else{
+            binding.setEmailBtn.visibility = View.INVISIBLE
         }
     }
 

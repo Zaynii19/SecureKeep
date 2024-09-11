@@ -87,4 +87,16 @@
     <string name="contact">Contact</string>
     <string name="linkedin">LinkedIn</string>
     <string name="refresh">Refresh</string>
+    <string name="get_intruder_by_email">Get Intruder by Email</string>
+    <string name="sends_intruder_picture_by_email">Sends intruder picture by email</string>
+    <string name="set_email_account">Set Email Account</string>
+    <string name="email_account">Email Account</string>
+    <string name="abc_123_com">abc@123.com</string>
+    <string name="current_email_account">Current Email Account</string>
+    <string name="add_email_account">Add Email Account</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="enter_email_account">Enter Email Account</string>
+    <string name="save">Save</string>
+    <string name="update_email_account">Update Email Account</string>
 </resources>

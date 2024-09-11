@@ -1,13 +1,13 @@
 package com.example.securekeep.settings
 
 import android.content.Intent
-import android.content.SharedPreferences
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.securekeep.R
+import com.example.securekeep.alarmsetup.EnterPinActivity
 import com.example.securekeep.databinding.ActivityPinBinding
 
 class PinActivity : AppCompatActivity() {
@@ -15,7 +15,8 @@ class PinActivity : AppCompatActivity() {
         ActivityPinBinding.inflate(layoutInflater)
     }
     private var isHidden = true
-    private lateinit var sharedPreferences: SharedPreferences // Declare it here
+    private var currentPin = ""
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -30,18 +31,18 @@ class PinActivity : AppCompatActivity() {
             finish()
         }
 
-        // Initialize SharedPreferences
-        sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
-        val currentPin = sharedPreferences.getString("USER_PIN", null)
+        // Initialize currentPin from SharedPreferences
+        val sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
+        currentPin = sharedPreferences.getString("USER_PIN", "") ?: ""
 
         binding.setPinCode.setOnClickListener {
-            val intent = Intent(this, CreatePinActivity::class.java)
-            intent.putExtra("CHANGE_PIN", true)
+            val intent = Intent(this, EnterPinActivity::class.java)
+            intent.putExtra("FromChangePin", true) // Pass the flag via Intent extra
             startActivity(intent)
         }
 
         binding.seeHiddenBtn.setOnClickListener {
-            if (isHidden){
+            if (isHidden) {
                 isHidden = false
                 binding.currentPIn.text = getString(R.string.staric)
                 binding.seeHiddenBtn.setImageResource(R.drawable.hidden)
@@ -51,6 +52,12 @@ class PinActivity : AppCompatActivity() {
                 binding.seeHiddenBtn.setImageResource(R.drawable.see)
             }
         }
+    }
 
+    override fun onResume() {
+        super.onResume()
+        // Reload the current PIN from SharedPreferences in case it was changed
+        val sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
+        currentPin = sharedPreferences.getString("USER_PIN", "") ?: ""
     }
 }

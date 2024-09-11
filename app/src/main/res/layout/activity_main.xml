@@ -52,8 +52,8 @@
                 android:id="@+id/rcv"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:paddingBottom="@dimen/_30sdp"
                 android:layout_marginVertical="@dimen/_10sdp"
-                android:layout_marginStart="@dimen/_10sdp"
                 android:scrollbarStyle="insideInset"
                 android:scrollbars="vertical"
                 android:scrollbarSize="@dimen/_1sdp" />
