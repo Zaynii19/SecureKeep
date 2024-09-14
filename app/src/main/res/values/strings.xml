@@ -99,4 +99,5 @@
     <string name="enter_email_account">Enter Email Account</string>
     <string name="save">Save</string>
     <string name="update_email_account">Update Email Account</string>
+    <string name="apply">Apply</string>
 </resources>

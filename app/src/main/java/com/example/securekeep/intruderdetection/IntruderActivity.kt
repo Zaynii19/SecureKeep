@@ -13,6 +13,7 @@ import android.os.CountDownTimer
 import android.os.Environment
 import android.util.Log
 import android.view.View
+import android.widget.Button
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.TextView
@@ -82,10 +83,7 @@ class IntruderActivity : AppCompatActivity() {
         binding.selectedAttempts.text = attemptThreshold.toString()
 
         loadSelfiesFromStorage()
-        binding.picsCount.text = buildString {
-            append("View all ")
-            append(currentSelfieCount)
-        }
+        binding.picsCount.text = currentSelfieCount.toString()
 
         binding.backBtn.setOnClickListener {
             startActivity(Intent(this@IntruderActivity, MainActivity::class.java))
@@ -177,10 +175,7 @@ class IntruderActivity : AppCompatActivity() {
         updatePowerButton()
 
         loadSelfiesFromStorage()
-        binding.picsCount.text = buildString {
-            append("View all ")
-            append(currentSelfieCount)
-        }
+        binding.picsCount.text = currentSelfieCount.toString()
     }
 
     private fun requestDeviceAdmin() {
@@ -192,8 +187,6 @@ class IntruderActivity : AppCompatActivity() {
         )
         startActivityForResult(intent, REQUEST_CODE_ENABLE_ADMIN)
     }
-
-
 
     private fun updatePowerButton() {
         if (alertStatus && isIntruderServiceRunning) {
@@ -224,15 +217,19 @@ class IntruderActivity : AppCompatActivity() {
         radioGroup.setOnCheckedChangeListener { _, checkedId ->
             val selectedRadioButton = dialogView.findViewById<RadioButton>(checkedId)
             val selectedValue = selectedRadioButton.text.toString()
-            binding.selectedAttempts.text = selectedValue
-            attemptThreshold = selectedValue.toInt()
 
-            // Store attempt threshold in shared preferences
-            val editor = sharedPreferences.edit()
-            editor.putInt("AttemptThreshold", attemptThreshold)
-            editor.apply()
+            val applyBtn = dialogView.findViewById<Button>(R.id.attemptApplyBtn)
+            applyBtn.setOnClickListener {
+                binding.selectedAttempts.text = selectedValue
+                attemptThreshold = selectedValue.toInt()
 
-            dialog.dismiss()
+                // Store attempt threshold in shared preferences
+                val editor = sharedPreferences.edit()
+                editor.putInt("AttemptThreshold", attemptThreshold)
+                editor.apply()
+
+                dialog.dismiss()
+            }
         }
 
         dialog.show()
