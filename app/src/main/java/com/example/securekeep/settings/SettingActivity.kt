@@ -152,6 +152,9 @@ class SettingActivity : AppCompatActivity() {
         tuneOptions.forEachIndexed { index, layout ->
             layout.setOnClickListener {
                 if (index == 5) {
+                    // Stop the currently playing tone when "System Tones" is selected
+                    stopMediaPlayer()
+
                     // Open system ringtone picker
                     val ringtonePickerIntent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER)
                     ringtonePickerIntent.putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM)
@@ -159,6 +162,9 @@ class SettingActivity : AppCompatActivity() {
                     ringtonePickerIntent.putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
                     ringtonePickerIntent.putExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI, systemToneUri)
                     startActivityForResult(ringtonePickerIntent, REQUEST_CODE_RINGTONE_PICKER)
+
+                    // Update the selected layout background for system tones
+                    updateSelectedToneLayout(layout, 0) // Pass 0 for system tone selection
                 } else {
                     // Play the selected internal tone
                     playTone(tuneIds[index])
@@ -167,7 +173,6 @@ class SettingActivity : AppCompatActivity() {
             }
         }
 
-        // Inside showTonePickerDialog()
         dialog.setOnDismissListener {
             stopMediaPlayer() // Ensure MediaPlayer is stopped when the dialog is dismissed
         }
@@ -176,6 +181,9 @@ class SettingActivity : AppCompatActivity() {
         val applyBtn = dialogView.findViewById<Button>(R.id.applyBtn)
         applyBtn.setOnClickListener {
             toneId = selectedToneId // Set the currently selected tone ID
+
+            // Stop any currently playing tone, including system tones
+            stopMediaPlayer()
 
             // Update the name display
             binding.alarmToneName.text = when (toneId) {
@@ -187,7 +195,7 @@ class SettingActivity : AppCompatActivity() {
                 else -> {
                     systemToneUri?.let {
                         val ringtone: Ringtone = RingtoneManager.getRingtone(applicationContext, it)
-                        ringtone.play()
+                        ringtone.stop() // Stop the system tone when applying
                     }
                     "System Tone" // Label for system tone
                 }
@@ -204,15 +212,16 @@ class SettingActivity : AppCompatActivity() {
             }
             editor.apply()
 
-            stopMediaPlayer() // Stop MediaPlayer explicitly before dismissing
             dialog.dismiss()
         }
+
 
         dialog.show()
         dialog.setOnDismissListener {
             stopMediaPlayer()
         }
     }
+
 
     // Handle the result from the ringtone picker
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

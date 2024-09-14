@@ -153,9 +153,6 @@ class TouchPhoneActivity : AppCompatActivity() {
         isAlarmActive = sharedPreferences.getBoolean("AlarmStatusTouch", false)
         isFlash = alarmPreferences.getBoolean("FlashStatus", false)
         isVibrate = alarmPreferences.getBoolean("VibrateStatus", false)
-        isVibrate = !isVibrate
-
-        Log.d("TouchActivity", "onResume: Flash: $isFlash Vibrate: $isVibrate")
 
         if (isAlarmServiceActive) {
             // Create a new intent with the necessary extras

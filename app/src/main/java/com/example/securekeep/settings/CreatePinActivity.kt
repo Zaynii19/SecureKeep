@@ -17,6 +17,7 @@ class CreatePinActivity : AppCompatActivity() {
     }
     private lateinit var pinDots: Array<View>
     private var enteredPin = ""
+    private var currentPin = ""
     private var isChangePinMode = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -24,6 +25,7 @@ class CreatePinActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
+        currentPin = sharedPreferences.getString("USER_PIN", "")!!
 
         isChangePinMode = intent.getBooleanExtra("CHANGE_PIN", false)
 
@@ -64,7 +66,12 @@ class CreatePinActivity : AppCompatActivity() {
                 } else {
                     onDigitClick(value)
                     if (enteredPin.length == 4) {
-                        pinCreate()
+                        if (enteredPin == currentPin){
+                            Toast.makeText(this@CreatePinActivity, "New pin can never be equal to old pin", Toast.LENGTH_SHORT).show()
+                            clearAllPinDots()
+                        }else{
+                            pinCreate()
+                        }
                     }
                 }
             }
@@ -87,6 +94,13 @@ class CreatePinActivity : AppCompatActivity() {
     private fun onClearClick() {
         if (enteredPin.isNotEmpty()) {
             enteredPin = enteredPin.substring(0, enteredPin.length - 1)
+            updatePinDots()
+        }
+    }
+
+    private fun clearAllPinDots() {
+        if (enteredPin.isNotEmpty()) {
+            enteredPin = ""
             updatePinDots()
         }
     }

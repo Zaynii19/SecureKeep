@@ -195,7 +195,6 @@ class ChargeDetectActivity : AppCompatActivity() {
         isAlarmActive = sharedPreferences.getBoolean("AlarmStatusCharge", false)
         isFlash = alarmPreferences.getBoolean("FlashStatus", false)
         isVibrate = alarmPreferences.getBoolean("VibrateStatus", false)
-        isVibrate = !isVibrate
 
         if (isAlarmServiceActive) {
             // Create a new intent with the necessary extras

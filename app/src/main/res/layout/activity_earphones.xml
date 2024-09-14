@@ -231,8 +231,6 @@
 
     </GridLayout>
 
-
-
     <TextView
         android:id="@+id/activateText"
         android:layout_width="wrap_content"

@@ -9,8 +9,8 @@ import com.mailjet.client.MailjetResponse
 object MailjetService {
 
     // Initialize the Mailjet client with your API credentials
-    private const val API_KEY = "your_api_key"
-    private const val API_SECRET = "your_api_secret_key"
+    private const val API_KEY = "46a633a02aef514ff3747b6b8111acda"
+    private const val API_SECRET = "4c7fa96a592f6b1c466164380aa01b2c"
 
     // Public Mailjet client instance
     private val client: MailjetClient by lazy {

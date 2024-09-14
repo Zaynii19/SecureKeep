@@ -203,13 +203,21 @@ class EnterPinActivity : AppCompatActivity() {
     private fun pinCheck() {
         if (enteredPin.length == 4) {
             if (enteredPin == currentPin) {
+
                 stopAlarm()
                 stopAlarmService()
 
+                isFlash = false
+                isVibrate = false
+                val editor1 = alarmPreferences.edit()
+                editor1.putBoolean("FlashStatus", isFlash)
+                editor1.putBoolean("VibrateStatus", isVibrate)
+                editor1.apply()
+
                 isAlarmServiceActive = false
-                val editor = sharedPreferences.edit()
-                editor.putBoolean("AlarmServiceStatus", isAlarmServiceActive)
-                editor.apply()
+                val editor2 = sharedPreferences.edit()
+                editor2.putBoolean("AlarmServiceStatus", isAlarmServiceActive)
+                editor2.apply()
 
                 // Call a separate method to handle post authentication
                 handleSuccessfulPinEntry()

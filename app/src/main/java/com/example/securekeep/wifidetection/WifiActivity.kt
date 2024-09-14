@@ -146,7 +146,6 @@ class WifiActivity : AppCompatActivity() {
         isAlarmActive = sharedPreferences.getBoolean("AlarmStatusWifi", false)
         isFlash = alarmPreferences.getBoolean("FlashStatus", false)
         isVibrate = alarmPreferences.getBoolean("VibrateStatus", false)
-        isVibrate = !isVibrate
 
         if (isAlarmServiceActive) {
             // Create a new intent with the necessary extras

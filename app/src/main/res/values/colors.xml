@@ -1,11 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+
     <color name="selected_tone_color">#DEE4DE</color>
     <color name="green">#16C31D</color>
     <color name="app_background">#DEE4DE</color>
     <color name="linkColor">#62B3F3</color>
     <color name="red">#F44336</color>
     <color name="toolbar_color">#145016</color>
+
+
+    <color name="purple_700">#6A1B9A</color>
+    <color name="purple_900">#4A148C</color>
+    <color name="teal_200">#80CBC4</color>
+    <color name="teal_700">#00796B</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="grey">#757575</color>
 </resources>

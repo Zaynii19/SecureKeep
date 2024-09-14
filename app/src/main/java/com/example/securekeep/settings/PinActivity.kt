@@ -44,12 +44,12 @@ class PinActivity : AppCompatActivity() {
         binding.seeHiddenBtn.setOnClickListener {
             if (isHidden) {
                 isHidden = false
-                binding.currentPIn.text = getString(R.string.staric)
-                binding.seeHiddenBtn.setImageResource(R.drawable.hidden)
-            } else {
-                isHidden = true
                 binding.currentPIn.text = currentPin
                 binding.seeHiddenBtn.setImageResource(R.drawable.see)
+            } else {
+                isHidden = true
+                binding.currentPIn.text = getString(R.string.staric)
+                binding.seeHiddenBtn.setImageResource(R.drawable.hidden)
             }
         }
     }

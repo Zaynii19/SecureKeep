@@ -16,7 +16,6 @@ import android.media.AudioManager
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
-import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import com.example.securekeep.R
@@ -34,7 +33,6 @@ class EarphoneDetectionService : Service() {
 
     private val audioReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            Log.d("EarphoneService", "onReceive: Receiving wired disconnect")
             if (intent.action == Intent.ACTION_HEADSET_PLUG) {
                 val state = intent.getIntExtra("state", -1)
                 if (state == 0) { // 0 means disconnected
@@ -94,7 +92,7 @@ class EarphoneDetectionService : Service() {
 
     private fun registerReceivers() {
         if (isWiredHeadsetConnected()) {
-            val filter = IntentFilter(AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED)
+            val filter = IntentFilter(Intent.ACTION_HEADSET_PLUG)
             registerReceiver(audioReceiver, filter)
         } else if (isBluetoothHeadsetConnected()) {
             val bluetoothFilter = IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECTED)
