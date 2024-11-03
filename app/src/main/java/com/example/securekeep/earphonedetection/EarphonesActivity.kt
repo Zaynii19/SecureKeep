@@ -9,9 +9,10 @@ import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.media.AudioManager
+import android.net.Uri
 import android.os.Bundle
 import android.os.CountDownTimer
-import android.view.View
+import android.provider.Settings
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -40,6 +41,10 @@ class EarphonesActivity : AppCompatActivity() {
     private lateinit var sharedPreferences: SharedPreferences
     private lateinit var alarmPreferences: SharedPreferences
 
+    companion object {
+        private const val REQUEST_BLUETOOTH_PERMISSION = 100
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -59,7 +64,6 @@ class EarphonesActivity : AppCompatActivity() {
 
         isEarphoneServiceRunning = MainActivity.isServiceRunning(this@EarphonesActivity, EarphoneDetectionService::class.java)
 
-
         updateUI()
 
         binding.backBtn.setOnClickListener {
@@ -70,28 +74,34 @@ class EarphonesActivity : AppCompatActivity() {
             startActivity(Intent(this, SettingActivity::class.java))
         }
 
+        // Check for Bluetooth permission before proceeding
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
+            == PackageManager.PERMISSION_GRANTED
+        ) {
+            setupEarphonesDetection()
+        } else {
+            requestBluetoothPermission()
+        }
+    }
+
+    private fun setupEarphonesDetection() {
+        if (isEarphonesConnected()) {
+            if (isAlarmActive) {
+                startEarphoneDetectionService()
+            }
+            updateUI()
+        } else {
+            Toast.makeText(this@EarphonesActivity, "Connect Earphones First", Toast.LENGTH_SHORT).show()
+            binding.powerBtn.setImageResource(R.drawable.earbuds)
+            binding.powerBtn.setOnClickListener(null)
+        }
+
         alertDialog = MaterialAlertDialogBuilder(this)
             .setTitle("Will Be Activated In 10 Seconds")
             .setMessage("00:10")
             .setBackground(ContextCompat.getDrawable(this, R.drawable.simple_round_boarder))
             .setCancelable(false)
             .create()
-
-        if (isEarphonesConnected()) {
-            if (isAlarmActive) {
-                startEarphoneDetectionService()
-            }
-            updateUI()
-            binding.refreshBtn.visibility = View.VISIBLE
-            binding.refreshBtn.setOnClickListener {
-                updateUI()
-            }
-        } else {
-            Toast.makeText(this@EarphonesActivity, "Connect Earphones First", Toast.LENGTH_SHORT).show()
-            binding.powerBtn.setImageResource(R.drawable.charger)
-            binding.powerBtn.setOnClickListener(null)
-            binding.refreshBtn.visibility = View.INVISIBLE
-        }
 
         binding.powerBtn.setOnClickListener {
             if (isEarphonesConnected()) {
@@ -156,6 +166,41 @@ class EarphonesActivity : AppCompatActivity() {
         }
     }
 
+    private fun requestBluetoothPermission() {
+        ActivityCompat.requestPermissions(
+            this,
+            arrayOf(Manifest.permission.BLUETOOTH_CONNECT),
+            REQUEST_BLUETOOTH_PERMISSION
+        )
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        when (requestCode) {
+            REQUEST_BLUETOOTH_PERMISSION -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    setupEarphonesDetection()
+                } else {
+                    // If permission is denied, show a Toast and open system settings
+                    Toast.makeText(this, "Bluetooth permission is required", Toast.LENGTH_SHORT).show()
+                    openAppSettings()
+                }
+            }
+        }
+    }
+
+    private fun openAppSettings() {
+        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+        val uri = Uri.fromParts("package", packageName, null)
+        intent.data = uri
+        startActivity(intent)
+    }
+
     override fun onResume() {
         super.onResume()
         val isAlarmServiceActive = sharedPreferences.getBoolean("AlarmServiceStatus", false)
@@ -195,14 +240,14 @@ class EarphonesActivity : AppCompatActivity() {
             editor.apply()
 
             stopEarphoneDetectionService()
-
         }
     }
 
     private fun updateUI() {
         if (isEarphonesConnected()) {
             binding.powerBtn.setImageResource(if (isAlarmActive) R.drawable.power_off else R.drawable.power_on)
-            binding.activateText.text = getString(if (isAlarmActive) R.string.tap_to_deactivate else R.string.tap_to_activate)
+            binding.activateText.text =
+                getString(if (isAlarmActive) R.string.tap_to_deactivate else R.string.tap_to_activate)
         } else {
             binding.powerBtn.setImageResource(R.drawable.earbuds)
             binding.activateText.text = getString(R.string.please_connect_earphones)
@@ -224,7 +269,8 @@ class EarphonesActivity : AppCompatActivity() {
     private fun isBluetoothHeadsetConnected(): Boolean {
         val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
         return if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
-            != PackageManager.PERMISSION_GRANTED) {
+            != PackageManager.PERMISSION_GRANTED
+        ) {
             false
         } else {
             bluetoothAdapter?.bondedDevices?.any {

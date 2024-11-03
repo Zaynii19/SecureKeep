@@ -3,13 +3,16 @@ package com.example.securekeep.intruderdetection
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -18,11 +21,16 @@ import androidx.core.view.WindowInsetsCompat
 import com.example.securekeep.MainActivity
 import com.example.securekeep.R
 import com.example.securekeep.databinding.ActivityPermissionBinding
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class PermissionActivity : AppCompatActivity() {
     private val binding by lazy {
         ActivityPermissionBinding.inflate(layoutInflater)
     }
+
+    // Track how many times the user has denied permissions
+    private var denialCount = 0
+    private var isYes = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,16 +42,52 @@ class PermissionActivity : AppCompatActivity() {
             insets
         }
 
-        // Request camera, storage, and other runtime permissions
-        requestPermissions()
+        // Check if overlay permission is granted
+        if (!Settings.canDrawOverlays(this)) {
+            showOverlayPermissionDialog()
+        }
 
         binding.startBtn.setOnClickListener {
-            if (MainActivity.checkPermissionsForService(this)){
+            // Always check and request permissions before starting the next activity
+            if (MainActivity.checkPermissionsForService(this)) {
                 startActivity(Intent(this, IntruderActivity::class.java))
                 finish()
             } else {
                 requestPermissions()
             }
+        }
+    }
+
+    private fun showOverlayPermissionDialog() {
+        val builder = MaterialAlertDialogBuilder(this)
+        builder.setTitle("Request Overlay Permission")
+            .setMessage("Display Overlay permission is needed for intruder feature.")
+            .setBackground(ContextCompat.getDrawable(this, R.drawable.simple_round_boarder))
+            .setPositiveButton("Yes") { _, _ ->
+                isYes = true
+                requestOverlayPermission()
+            }
+            .setNegativeButton("No") { dialog, _ ->
+                dialog.dismiss()
+                finish()
+            }
+            .create().apply {
+                show()
+                // Set title text color
+                val titleView = findViewById<TextView>(androidx.appcompat.R.id.alertTitle)
+                titleView?.setTextColor(Color.BLACK)
+                // Set message text color
+                findViewById<TextView>(android.R.id.message)?.setTextColor(Color.BLACK)
+                // Set button color
+                getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(ContextCompat.getColor(context, R.color.green))
+                getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(ContextCompat.getColor(context, R.color.green))
+            }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (isYes && !Settings.canDrawOverlays(this)){
+            finish()
         }
     }
 
@@ -98,11 +142,14 @@ class PermissionActivity : AppCompatActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
         if (requestCode == PERMISSION_REQUEST_CODE) {
-            // Check if all requested permissions are granted
-            if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
-                Log.d("IntruderActivity", "All permissions granted successfully")
+            handleDeniedPermissions(permissions, grantResults)
+
+            // Recheck and ensure all permissions are granted; if they are, proceed
+            if (MainActivity.checkPermissionsForService(this)) {
+                startActivity(Intent(this, IntruderActivity::class.java))
+                finish()
             } else {
-                handleDeniedPermissions(permissions, grantResults)
+                Toast.makeText(this, "Permissions are still required.", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -119,7 +166,6 @@ class PermissionActivity : AppCompatActivity() {
     }
 
     private fun handleDeniedPermissions(permissions: Array<out String>, grantResults: IntArray) {
-        // Define messages for denied permissions
         val permissionMessages = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             mapOf(
                 Manifest.permission.CAMERA to "Camera permission is required to capture selfies.",
@@ -134,18 +180,35 @@ class PermissionActivity : AppCompatActivity() {
             )
         }
 
-        // Iterate through denied permissions and show corresponding toast messages
-        for ((index, permission) in permissions.withIndex()) {
-            if (grantResults[index] != PackageManager.PERMISSION_GRANTED) {
-                permissionMessages[permission]?.let { message ->
+        // Show toast messages for each denied permission
+        var permissionDenied = false
+        for (i in permissions.indices) {
+            if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
+                permissionMessages[permissions[i]]?.let { message ->
                     Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
                 }
+                permissionDenied = true
+            }
+        }
+
+        // Track denial count and open settings if denied twice
+        if (permissionDenied) {
+            denialCount++
+            if (denialCount >= 2) {
+                openSettings()
             }
         }
     }
 
+    private fun openSettings() {
+        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+        val uri = Uri.fromParts("package", packageName, null)
+        intent.data = uri
+        startActivity(intent)
+    }
+
     companion object {
-        private const val PERMISSION_REQUEST_CODE = 101  // Unique code for permission requests
-        private const val OVERLAY_PERMISSION_REQUEST_CODE = 102  // Unique code for overlay permission request
+        private const val PERMISSION_REQUEST_CODE = 101
+        private const val OVERLAY_PERMISSION_REQUEST_CODE = 102
     }
 }

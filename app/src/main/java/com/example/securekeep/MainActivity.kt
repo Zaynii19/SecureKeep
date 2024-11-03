@@ -38,20 +38,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var toggle: ActionBarDrawerToggle
     private var categoryList = ArrayList<RCVModel>()
-    private val requiredPermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        arrayOf(
-            Manifest.permission.POST_NOTIFICATIONS,
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION,
-            Manifest.permission.BLUETOOTH_CONNECT
-        )
-    } else {
-            arrayOf(
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION,
-            )
-    }
-    private val permissionsRequestCode = 1001
+    private var permissionRequestCount = 0  // Tracks permission request count
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,7 +51,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         setupUI()
-        requestNecessaryPermissions()  // Request only necessary permissions
+        requestNotificationPermission() // Request notification permission when activity starts
         initializeCategoryList()
     }
 
@@ -127,28 +114,37 @@ class MainActivity : AppCompatActivity() {
         binding.rcv.setHasFixedSize(true)
     }
 
+    private fun initializeCategoryList() {
+        categoryList.add(RCVModel(R.drawable.intruder, "Intruder Alert", "Capture Intruder's photo upon unauthorized unlock attempt"))
+        categoryList.add(RCVModel(R.drawable.touch, "Don't Touch My Phone", "Detects when your phone is moved"))
+        categoryList.add(RCVModel(R.drawable.pocket, "Anti Pocket Detection", "Detect when remove from pocket"))
+        categoryList.add(RCVModel(R.drawable.phone_charge, "Charging Detection", "Detect when charger is unplugged"))
+        categoryList.add(RCVModel(R.drawable.wifi, "Wifi Detection", "Alarm when someone try to on/off your wifi"))
+        categoryList.add(RCVModel(R.drawable.battery, "Avoid Over Charging", "Alarm when battery is fully charged"))
+        categoryList.add(RCVModel(R.drawable.headphone, "Earphones Detection", "Earphones detections"))
+    }
 
-    private fun requestNecessaryPermissions() {
-        val permissionsToRequest = requiredPermissions.filter { permission ->
-            ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED
-        }.toTypedArray()
-
-        if (permissionsToRequest.isNotEmpty()) {
-            ActivityCompat.requestPermissions(this, permissionsToRequest, permissionsRequestCode)
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), PERMISSION_REQUEST_CODE)
+            }
         }
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+    // Handle the result of permission requests
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == permissionsRequestCode) {
-            val permissionsGranted = grantResults.isNotEmpty() && grantResults.all { result -> result == PackageManager.PERMISSION_GRANTED }
 
-            if (permissionsGranted) {
-                Toast.makeText(this, "All requested permissions granted", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(this, "Some permissions were denied", Toast.LENGTH_SHORT).show()
-                // Optionally, guide the user to app settings
-                openAppSettings()
+        if (requestCode == PERMISSION_REQUEST_CODE) {
+            val deniedPermissions = permissions.filterIndexed { index, _ -> grantResults[index] != PackageManager.PERMISSION_GRANTED }
+            if (deniedPermissions.isNotEmpty()) {
+                permissionRequestCount++
+                if (permissionRequestCount >= 2) {
+                    openAppSettings() // Open settings after the user denies permission twice
+                } else {
+                    Toast.makeText(this, "Notification permission permission is required.", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
@@ -160,17 +156,9 @@ class MainActivity : AppCompatActivity() {
         startActivity(intent)
     }
 
-    private fun initializeCategoryList() {
-        categoryList.add(RCVModel(R.drawable.intruder, "Intruder Alert", "Capture Intruder's photo upon unauthorized unlock attempt"))
-        categoryList.add(RCVModel(R.drawable.touch, "Don't Touch My Phone", "Detects when your phone is moved"))
-        categoryList.add(RCVModel(R.drawable.pocket, "Anti Pocket Detection", "Detect when remove from pocket"))
-        categoryList.add(RCVModel(R.drawable.phone_charge, "Charging Detection", "Detect when charger is unplugged"))
-        categoryList.add(RCVModel(R.drawable.wifi, "Wifi Detection", "Alarm when someone try to on/off your wifi"))
-        categoryList.add(RCVModel(R.drawable.battery, "Avoid Over Charging", "Alarm when battery is fully charged"))
-        categoryList.add(RCVModel(R.drawable.headphone, "Earphones Detection", "Earphones detections"))
-    }
-
     companion object {
+        private const val PERMISSION_REQUEST_CODE = 101
+
         fun checkPermissionsForService(context: Context): Boolean {
             // Android 14 and Above
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
@@ -218,7 +206,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-
         fun isServiceRunning(context: Context, serviceClass: Class<*>): Boolean {
             val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
             return manager.getRunningServices(Int.MAX_VALUE)
@@ -226,4 +213,3 @@ class MainActivity : AppCompatActivity() {
         }
     }
 }
-

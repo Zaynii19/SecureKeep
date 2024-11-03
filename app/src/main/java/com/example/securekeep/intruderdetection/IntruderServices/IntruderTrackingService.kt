@@ -24,6 +24,9 @@ class IntruderTrackingService : Service() {
     private lateinit var sharedPreferences: SharedPreferences
     private lateinit var keyguardManager: KeyguardManager
     private val handler = Handler()
+    private var isMagicServiceRunning = false
+    private val lock = Any() // Lock object for synchronization
+
 
     private val passwordAttemptReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -60,17 +63,23 @@ class IntruderTrackingService : Service() {
     }
 
     private fun onWrongPinAttempt() {
-        currentFailedAttempts++
-        Log.d("IntruderTrackingService", "Wrong PIN attempt detected. Failed attempts: $currentFailedAttempts")
-        if (currentFailedAttempts >= attemptThreshold) {
-            startMagicService()
+        synchronized(lock) {
+            if (isMagicServiceRunning) return // Prevent multiple invocations
+            currentFailedAttempts++
+            Log.d("IntruderTrackingService", "Wrong PIN attempt detected. Failed attempts: $currentFailedAttempts")
+            if (currentFailedAttempts >= attemptThreshold) {
+                startMagicService()
+                isMagicServiceRunning = true // Update this only after starting the service
+            }
         }
     }
 
     private fun onCorrectPinAttempt() {
-        // Reset failed attempts on successful password entry or device unlock
-        currentFailedAttempts = 0
-        Log.d("IntruderTrackingService", "Device unlocked. Resetting failed attempts.")
+        synchronized(lock) {
+            currentFailedAttempts = 0
+            isMagicServiceRunning = false // Reset the flag if device unlocks
+            //Log.d("IntruderTrackingService", "Device unlocked. Resetting failed attempts and flags.")
+        }
     }
 
     private fun startForegroundService() {

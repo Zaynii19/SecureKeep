@@ -44,7 +44,6 @@ class EmailActivity : AppCompatActivity() {
             val bottomSheetDialog: BottomSheetDialogFragment = AddEmailFragment.newInstance(object : AddEmailFragment.OnEmailUpdatedListener {
                 override fun onEmailUpdated(email: String) {
                     binding.currentEmail.text = email
-                    binding.emailStatus.text = if (email.isEmpty()) getString(R.string.add_email_account) else getString(R.string.update_email_account)
                 }
             })
             bottomSheetDialog.show(this.supportFragmentManager, "Email")

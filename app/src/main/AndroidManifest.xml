@@ -2,27 +2,29 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     package="com.example.securekeep">
+
     <!-- Permissions -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <uses-permission android:name="android.permission.VIBRATE" /> <!-- for wifi detection feature -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- for wifi detection feature -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
-    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" /> <!-- for earphone detection feature -->
+    <!-- for earphone detection feature -->
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.BLUETOOTH" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" /> <!-- for motion and proximity detection feature -->
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.SENSOR" /> <!-- for intruder selfie detection feature -->
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <!-- for motion and proximity detection feature -->
+    <uses-permission android:name="android.permission.SENSOR" />
+    <!-- for intruder selfie detection feature -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.ACTION_MANAGE_OVERLAY_PERMISSION" />
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.REORDER_TASKS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" /> <!-- Scoped Storage Permissions -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Scoped Storage Permissions -->
     <uses-permission
         android:name="android.permission.READ_MEDIA_IMAGES"
         android:maxSdkVersion="34" />
@@ -31,12 +33,14 @@
         android:maxSdkVersion="32" />
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        android:maxSdkVersion="28" /> <!-- Foreground Service Permissions for API 34+ -->
+        android:maxSdkVersion="28" />
+    <!-- Foreground Service Permissions for API 34+ -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" /> <!-- Camera Features -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Camera Features -->
     <uses-feature android:name="android.hardware.camera.flash" />
     <uses-feature
         android:name="android.hardware.camera"
@@ -52,9 +56,6 @@
         android:roundIcon="@drawable/icon"
         android:supportsRtl="true"
         android:theme="@style/Theme.SecureKeep">
-        <activity
-            android:name=".settings.ConfirmPinActivity"
-            android:exported="false" />
         <activity
             android:name=".settings.EmailActivity"
             android:exported="false" />
@@ -99,7 +100,7 @@
             android:exported="false" />
         <activity
             android:name=".intruderdetection.IntruderActivity"
-            android:exported="false" /> <!-- <activity android:name=".intruderdetection.IntruderSelfieActivity" android:exported="false" /> -->
+            android:exported="false" />
         <activity
             android:name=".intruderdetection.PermissionActivity"
             android:exported="false" />
@@ -115,16 +116,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true" />
-
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.fileprovider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/fileprovider" />
-        </provider> <!-- Receivers -->
+        <!-- Receivers -->
         <receiver
             android:name=".intruderdetection.IntruderServices.MyDeviceAdminReceiver"
             android:exported="true"
@@ -150,11 +142,11 @@
         <service
             android:name=".touchdetection.MotionDetectionService"
             android:exported="false"
-            android:foregroundServiceType="location" />
+            android:foregroundServiceType="specialUse" />
         <service
             android:name=".antipocket.ProximityDetectionService"
             android:exported="false"
-            android:foregroundServiceType="location" />
+            android:foregroundServiceType="specialUse" />
         <service
             android:name=".alarmsetup.AlarmService"
             android:exported="false"

@@ -31,7 +31,9 @@ import com.example.securekeep.databinding.ActivityIntruderBinding
 import com.example.securekeep.intruderdetection.IntruderAdapter.SelfieModel
 import com.example.securekeep.intruderdetection.IntruderServices.IntruderTrackingService
 import com.example.securekeep.intruderdetection.IntruderServices.MyDeviceAdminReceiver
+import com.example.securekeep.settings.AddEmailFragment
 import com.example.securekeep.settings.EmailActivity
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -152,16 +154,37 @@ class IntruderActivity : AppCompatActivity() {
         }
 
         binding.emailSwitch.setOnClickListener {
-            isEmail = !isEmail
-            binding.emailSwitch.setImageResource(if (isEmail) R.drawable.switch_on else R.drawable.switch_off)
-            Toast.makeText(this, if (isEmail) "Email Feature Enable" else "Email Feature disable", Toast.LENGTH_SHORT).show()
+            if (!isEmail){
+                val bottomSheetDialog: BottomSheetDialogFragment = AddEmailFragment.newInstance(object : AddEmailFragment.OnEmailUpdatedListener {
+                    override fun onEmailUpdated(email: String) {
+                        if (email.isNotEmpty()) {
+                            isEmail = !isEmail
+                            binding.emailSwitch.setImageResource(if (isEmail) R.drawable.switch_on else R.drawable.switch_off)
 
-            updatePowerButton()
+                            updatePowerButton()
 
-            // Storing email status value in shared preferences
-            val editor = sharedPreferences.edit()
-            editor.putBoolean("EmailStatus", isEmail)
-            editor.apply()
+                            // Storing email status value in shared preferences
+                            val editor = sharedPreferences.edit()
+                            editor.putBoolean("EmailStatus", isEmail)
+                            editor.apply()
+
+                            Toast.makeText(this@IntruderActivity, "Email Feature Enable", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                })
+                bottomSheetDialog.show(this.supportFragmentManager, "Email")
+
+            }else{
+                isEmail = false
+                // Storing email status value in shared preferences
+                val editor = sharedPreferences.edit()
+                editor.putBoolean("EmailStatus", isEmail)
+                editor.apply()
+                binding.emailSwitch.setImageResource(if (isEmail) R.drawable.switch_on else R.drawable.switch_off)
+                updatePowerButton()
+                Toast.makeText(this, "Email Feature disable", Toast.LENGTH_SHORT).show()
+            }
+
         }
 
         binding.setEmailBtn.setOnClickListener {

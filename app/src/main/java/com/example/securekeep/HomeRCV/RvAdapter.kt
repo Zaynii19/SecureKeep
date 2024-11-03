@@ -36,16 +36,14 @@ class RvAdapter(val context: Context, private var categoryList: ArrayList<RCVMod
         holder.binding.categoryText.text = dataList.catText
         holder.binding.categoryDescrip.text = dataList.catDescrip
 
-
-        val hasPermission = MainActivity.checkPermissionsForService(context)
-
         holder.binding.categoryBtn.setOnClickListener {
+            val hasPermission = MainActivity.checkPermissionsForService(context) // Check permission dynamically here
+
             val intent = when (dataList.catText) {
                 "Intruder Alert" ->
                     if (hasPermission) {
                         Intent(context, IntruderActivity::class.java)
-                    }
-                    else{
+                    } else {
                         Intent(context, PermissionActivity::class.java)
                     }
                 "Don't Touch My Phone" -> Intent(context, TouchPhoneActivity::class.java)
@@ -54,8 +52,7 @@ class RvAdapter(val context: Context, private var categoryList: ArrayList<RCVMod
                 "Wifi Detection" -> Intent(context, WifiActivity::class.java)
                 "Avoid Over Charging" -> Intent(context, OverChargeActivity::class.java)
                 "Earphones Detection" -> Intent(context, EarphonesActivity::class.java)
-
-                else -> Intent(context, TouchPhoneActivity::class.java) // A default activity in case no match is found
+                else -> Intent(context, TouchPhoneActivity::class.java) // Default case
             }
             ContextCompat.startActivity(context, intent, null)
         }

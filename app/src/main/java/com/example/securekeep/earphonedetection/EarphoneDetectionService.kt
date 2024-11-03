@@ -16,6 +16,7 @@ import android.media.AudioManager
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
+import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import com.example.securekeep.R
@@ -45,12 +46,24 @@ class EarphoneDetectionService : Service() {
     private val bluetoothReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             val action = intent.action
-            if (BluetoothDevice.ACTION_ACL_DISCONNECTED == action) {
-                triggerAlarm()
-                stopSelf()
+            when (action) {
+                BluetoothDevice.ACTION_ACL_DISCONNECTED -> {
+                    Log.d("EarphoneService", "Bluetooth Device Disconnected")
+                    triggerAlarm()
+                    stopSelf()
+                }
+                BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED -> {
+                    val state = intent.getIntExtra(BluetoothAdapter.EXTRA_CONNECTION_STATE, -1)
+                    if (state == BluetoothAdapter.STATE_DISCONNECTED) {
+                        Log.d("EarphoneService", "Bluetooth Disconnected (Connection State Changed)")
+                        triggerAlarm()
+                        stopSelf()
+                    }
+                }
             }
         }
     }
+
 
     override fun onCreate() {
         super.onCreate()
@@ -59,6 +72,8 @@ class EarphoneDetectionService : Service() {
         activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
 
         startForegroundService()
+
+        Log.d("EarphoneService", "Bluetooth connected: ${isBluetoothHeadsetConnected()}")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -91,14 +106,16 @@ class EarphoneDetectionService : Service() {
     }
 
     private fun registerReceivers() {
-        if (isWiredHeadsetConnected()) {
+        val wiredHeadsetConnected = isWiredHeadsetConnected()
+        if (wiredHeadsetConnected) {
             val filter = IntentFilter(Intent.ACTION_HEADSET_PLUG)
             registerReceiver(audioReceiver, filter)
-        } else if (isBluetoothHeadsetConnected()) {
-            val bluetoothFilter = IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECTED)
-            registerReceiver(bluetoothReceiver, bluetoothFilter)
         }
+        val bluetoothFilter = IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECTED)
+        registerReceiver(bluetoothReceiver, bluetoothFilter)
+        Log.d("EarphoneService", "Bluetooth receiver registered")
     }
+
 
     private fun unregisterReceivers() {
         if (isWiredHeadsetConnected())
