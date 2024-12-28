@@ -7,11 +7,13 @@ import android.app.NotificationManager
 import android.app.Service
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.media.AudioDeviceInfo
 import android.media.AudioManager
 import android.os.Build
 import android.os.IBinder
@@ -111,11 +113,14 @@ class EarphoneDetectionService : Service() {
             val filter = IntentFilter(Intent.ACTION_HEADSET_PLUG)
             registerReceiver(audioReceiver, filter)
         }
-        val bluetoothFilter = IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECTED)
+
+        val bluetoothFilter = IntentFilter().apply {
+            addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED)
+            addAction(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED)
+        }
         registerReceiver(bluetoothReceiver, bluetoothFilter)
         Log.d("EarphoneService", "Bluetooth receiver registered")
     }
-
 
     private fun unregisterReceivers() {
         if (isWiredHeadsetConnected())
@@ -177,11 +182,20 @@ class EarphoneDetectionService : Service() {
 
     private fun isWiredHeadsetConnected(): Boolean {
         val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        return audioManager.isWiredHeadsetOn
+        val devices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
+
+        for (device in devices) {
+            if (device.type == AudioDeviceInfo.TYPE_WIRED_HEADSET || device.type == AudioDeviceInfo.TYPE_WIRED_HEADPHONES) {
+                return true
+            }
+        }
+        return false
     }
 
     private fun isBluetoothHeadsetConnected(): Boolean {
-        val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+        val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        val bluetoothAdapter = bluetoothManager.adapter
+
         return if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
             != PackageManager.PERMISSION_GRANTED) {
             false

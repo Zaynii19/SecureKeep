@@ -1,13 +1,16 @@
 package com.example.securekeep.earphonedetection
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.media.AudioDeviceInfo
 import android.media.AudioManager
 import android.net.Uri
 import android.os.Bundle
@@ -64,7 +67,7 @@ class EarphonesActivity : AppCompatActivity() {
 
         isEarphoneServiceRunning = MainActivity.isServiceRunning(this@EarphonesActivity, EarphoneDetectionService::class.java)
 
-        updateUI()
+        setupEarphonesDetection()
 
         binding.backBtn.setOnClickListener {
             finish()
@@ -72,15 +75,6 @@ class EarphonesActivity : AppCompatActivity() {
 
         binding.settingBtn.setOnClickListener {
             startActivity(Intent(this, SettingActivity::class.java))
-        }
-
-        // Check for Bluetooth permission before proceeding
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
-            == PackageManager.PERMISSION_GRANTED
-        ) {
-            setupEarphonesDetection()
-        } else {
-            requestBluetoothPermission()
         }
     }
 
@@ -104,43 +98,51 @@ class EarphonesActivity : AppCompatActivity() {
             .create()
 
         binding.powerBtn.setOnClickListener {
-            if (isEarphonesConnected()) {
-                if (isAlarmActive && isEarphoneServiceRunning) {
-                    stopEarphoneDetection()
-                } else {
-                    isAlarmActive = true
+            // Check for Bluetooth permission before proceeding
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
+                // Proceed with earphones detection
+                if (isEarphonesConnected()) {
+                    if (isAlarmActive && isEarphoneServiceRunning) {
+                        stopEarphoneDetection()
+                    } else {
+                        isAlarmActive = true
 
-                    alertDialog.apply {
-                        show()
-                        // Set title text color
-                        val titleView = findViewById<TextView>(androidx.appcompat.R.id.alertTitle)
-                        titleView?.setTextColor(Color.BLACK)
-                        // Set message text color
-                        findViewById<TextView>(android.R.id.message)?.setTextColor(Color.BLACK)
-                    }
-
-                    object : CountDownTimer(10000, 1000) {
-                        override fun onTick(millisUntilFinished: Long) {
-                            alertDialog.setMessage("00:${millisUntilFinished / 1000}")
+                        alertDialog.apply {
+                            show()
+                            // Set title text color
+                            val titleView = findViewById<TextView>(androidx.appcompat.R.id.alertTitle)
+                            titleView?.setTextColor(Color.BLACK)
+                            // Set message text color
+                            findViewById<TextView>(android.R.id.message)?.setTextColor(Color.BLACK)
                         }
 
-                        override fun onFinish() {
-                            if (alertDialog.isShowing) {
-                                alertDialog.dismiss()
+                        object : CountDownTimer(10000, 1000) {
+                            override fun onTick(millisUntilFinished: Long) {
+                                alertDialog.setMessage("00:${millisUntilFinished / 1000}")
                             }
-                            Toast.makeText(this@EarphonesActivity, "Earphones Detection Mode Activated", Toast.LENGTH_SHORT).show()
-                            updateUI()
-                            startEarphoneDetectionService()
-                            // Storing alarm status value in shared preferences
-                            val editor = sharedPreferences.edit()
-                            editor.putBoolean("AlarmStatusEarphone", isAlarmActive)
-                            editor.apply()
-                        }
-                    }.start()
+
+                            override fun onFinish() {
+                                if (alertDialog.isShowing) {
+                                    alertDialog.dismiss()
+                                }
+                                Toast.makeText(this@EarphonesActivity, "Earphones Detection Mode Activated", Toast.LENGTH_SHORT).show()
+                                updateUI()
+                                startEarphoneDetectionService()
+                                // Storing alarm status value in shared preferences
+                                val editor = sharedPreferences.edit()
+                                editor.putBoolean("AlarmStatusEarphone", isAlarmActive)
+                                editor.apply()
+                            }
+                        }.start()
+                    }
+                } else {
+                    Toast.makeText(this@EarphonesActivity, "Connect Earphones First", Toast.LENGTH_SHORT).show()
                 }
             } else {
-                Toast.makeText(this@EarphonesActivity, "Connect Earphones First", Toast.LENGTH_SHORT).show()
+                // Request Bluetooth permission
+                requestBluetoothPermission()
             }
+
         }
 
         binding.switchBtnV.setOnClickListener {
@@ -166,6 +168,7 @@ class EarphonesActivity : AppCompatActivity() {
         }
     }
 
+    @SuppressLint("InlinedApi")
     private fun requestBluetoothPermission() {
         ActivityCompat.requestPermissions(
             this,
@@ -263,14 +266,22 @@ class EarphonesActivity : AppCompatActivity() {
 
     private fun isWiredHeadsetConnected(): Boolean {
         val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        return audioManager.isWiredHeadsetOn
+        val devices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
+
+        for (device in devices) {
+            if (device.type == AudioDeviceInfo.TYPE_WIRED_HEADSET || device.type == AudioDeviceInfo.TYPE_WIRED_HEADPHONES) {
+                return true
+            }
+        }
+        return false
     }
 
     private fun isBluetoothHeadsetConnected(): Boolean {
-        val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+        val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        val bluetoothAdapter = bluetoothManager.adapter
+
         return if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
-            != PackageManager.PERMISSION_GRANTED
-        ) {
+            != PackageManager.PERMISSION_GRANTED) {
             false
         } else {
             bluetoothAdapter?.bondedDevices?.any {

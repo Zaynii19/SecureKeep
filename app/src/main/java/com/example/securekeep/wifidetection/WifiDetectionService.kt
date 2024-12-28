@@ -4,11 +4,12 @@ import android.app.ActivityManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
@@ -26,33 +27,23 @@ class WifiDetectionService : Service() {
     private var isVibrate = false
     private var isFlash = false
     private var isAlarmActive = false
-    private val wifiReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            val currentWifiState = isWifiConnected()
-            if (lastWifiState == null) {
-                lastWifiState = currentWifiState
-                return
-            }
-            if (lastWifiState != currentWifiState) {
-                lastWifiState = currentWifiState
-                triggerAlarm()
-            }
-        }
-    }
+    private lateinit var connectivityManager: ConnectivityManager
+    private lateinit var networkCallback: ConnectivityManager.NetworkCallback
 
     override fun onCreate() {
         super.onCreate()
 
         powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
         activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
         startForegroundService()
+        setupNetworkCallback()
+        // Initialize the last Wi-Fi state
+        lastWifiState = isWifiConnected()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val filter = IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION)
-        registerReceiver(wifiReceiver, filter)
-
         intent?.let {
             isVibrate = it.getBooleanExtra("Vibrate", false)
             isFlash = it.getBooleanExtra("Flash", false)
@@ -62,9 +53,35 @@ class WifiDetectionService : Service() {
         return START_STICKY
     }
 
+    private fun setupNetworkCallback() {
+        networkCallback = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                // Wi-Fi connected
+                if (lastWifiState == false) {
+                    lastWifiState = true
+                    triggerAlarm()
+                }
+            }
+
+            override fun onLost(network: Network) {
+                // Wi-Fi disconnected
+                if (lastWifiState == true) {
+                    lastWifiState = false
+                    triggerAlarm()
+                }
+            }
+        }
+
+        val request = NetworkRequest.Builder()
+            .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+            .build()
+
+        connectivityManager.registerNetworkCallback(request, networkCallback)
+    }
+
     override fun onDestroy() {
         super.onDestroy()
-        unregisterReceiver(wifiReceiver)
+        connectivityManager.unregisterNetworkCallback(networkCallback)
     }
 
     override fun onBind(intent: Intent?): IBinder? {
@@ -72,9 +89,9 @@ class WifiDetectionService : Service() {
     }
 
     private fun isWifiConnected(): Boolean {
-        val connManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val networkInfo = connManager.activeNetworkInfo
-        return networkInfo?.type == ConnectivityManager.TYPE_WIFI && networkInfo.isConnected
+        val activeNetwork = connectivityManager.activeNetwork
+        val networkCapabilities = connectivityManager.getNetworkCapabilities(activeNetwork)
+        return networkCapabilities?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true
     }
 
     private fun triggerAlarm() {

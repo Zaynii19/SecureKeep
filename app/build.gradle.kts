@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.example.securekeep"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.example.securekeep"
@@ -64,7 +64,9 @@ dependencies {
     implementation (libs.ssp.android)
     implementation (libs.sdp.android)
 
-    implementation(libs.mailjet.client)
+    implementation (libs.mailjet.client) // not used in this project
+    implementation (libs.android.mail)
+    implementation (libs.android.activation)
     implementation (libs.kotlinx.coroutines.core)
     implementation (libs.kotlinx.coroutines.android)
 

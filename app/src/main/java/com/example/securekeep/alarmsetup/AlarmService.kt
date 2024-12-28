@@ -14,6 +14,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.os.PowerManager
 import android.os.VibrationAttributes
 import android.os.VibrationEffect
@@ -65,7 +66,7 @@ class AlarmService : Service() {
         cameraId = cameraManager.cameraIdList.firstOrNull() ?: return // Check for null
         audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
         powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
-        handler = Handler()
+        handler = Handler(Looper.getMainLooper())
         handler.post(volumeCheckRunnable)  // Start volume check task
         vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
 

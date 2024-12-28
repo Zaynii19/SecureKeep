@@ -3,7 +3,7 @@ package com.example.securekeep
 import android.content.Context
 import android.content.SharedPreferences
 
-class MyPreferences(private val context: Context) {
+class MyPreferences(context: Context) {
 
     private var isVibrate = false
     private var isFlash = false

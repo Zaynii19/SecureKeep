@@ -19,6 +19,7 @@ import androidx.core.app.NotificationCompat
 import com.example.securekeep.R
 import com.example.securekeep.alarmsetup.AlarmService
 import com.example.securekeep.alarmsetup.EnterPinActivity
+import kotlin.math.sqrt
 
 class MotionDetectionService : Service(), SensorEventListener {
 
@@ -74,7 +75,7 @@ class MotionDetectionService : Service(), SensorEventListener {
             val y = values[1]
             val z = values[2]
             mAccelLast = mAccelCurrent
-            mAccelCurrent = Math.sqrt((x * x + y * y + z * z).toDouble()).toFloat()
+            mAccelCurrent = sqrt((x * x + y * y + z * z).toDouble()).toFloat()
             val delta = mAccelCurrent - mAccelLast
             mAccel = mAccel * 0.9f + delta
 

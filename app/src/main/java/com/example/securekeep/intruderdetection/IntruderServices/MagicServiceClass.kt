@@ -7,8 +7,6 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.ImageFormat
 import android.hardware.camera2.CameraAccessException
 import android.hardware.camera2.CameraCaptureSession
@@ -17,6 +15,8 @@ import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraManager
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.TotalCaptureResult
+import android.hardware.camera2.params.OutputConfiguration
+import android.hardware.camera2.params.SessionConfiguration
 import android.media.ImageReader
 import android.os.Build
 import android.os.Environment
@@ -24,23 +24,30 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.os.IBinder
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import com.example.securekeep.R
 import com.example.securekeep.intruderdetection.IntruderSelfieActivity
-import com.mailjet.client.MailjetRequest
-import com.mailjet.client.resource.Emailv31
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import org.json.JSONArray
-import org.json.JSONObject
-import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.util.Locale
+import java.util.Properties
 import java.util.Random
+import java.util.concurrent.Executors
+import javax.mail.Authenticator
+import javax.mail.Message
+import javax.mail.PasswordAuthentication
+import javax.mail.Session
+import javax.mail.Transport
+import javax.mail.internet.InternetAddress
+import javax.mail.internet.MimeBodyPart
+import javax.mail.internet.MimeMessage
+import javax.mail.internet.MimeMultipart
 
 class MagicServiceClass : Service() {
     private var isEmail = false
@@ -130,6 +137,7 @@ class MagicServiceClass : Service() {
     }
 
     private val stateCallback = object : CameraDevice.StateCallback() {
+        @RequiresApi(Build.VERSION_CODES.P)
         override fun onOpened(camera: CameraDevice) {
             cameraDevice = camera
             startCaptureSession()
@@ -145,7 +153,7 @@ class MagicServiceClass : Service() {
         }
     }
 
-    private fun startCaptureSession() {
+    /*private fun startCaptureSession() {
         try {
             imageReader = ImageReader.newInstance(1920, 1080, ImageFormat.JPEG, 1)
             imageReader.setOnImageAvailableListener(imageAvailableListener, backgroundHandler)
@@ -176,6 +184,59 @@ class MagicServiceClass : Service() {
                 },
                 backgroundHandler
             )
+        } catch (e: Exception) {
+            Log.e("MagicService", "Error starting capture session: ${e.message}")
+        }
+    }*/
+
+    @RequiresApi(Build.VERSION_CODES.P)
+    private fun startCaptureSession() {
+        try {
+            imageReader = ImageReader.newInstance(1920, 1080, ImageFormat.JPEG, 1)
+            imageReader.setOnImageAvailableListener(imageAvailableListener, backgroundHandler)
+
+            val captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE)
+            captureRequestBuilder.addTarget(imageReader.surface)
+
+            // Set the JPEG orientation
+            captureRequestBuilder.set(CaptureRequest.JPEG_ORIENTATION, 270)
+
+            // Create output configurations for the session
+            val outputConfig = OutputConfiguration(imageReader.surface)
+            val outputConfigs = listOf(outputConfig)
+
+            // Use an executor for callbacks
+            val executor = Executors.newSingleThreadExecutor()
+
+            // Create session configuration
+            val sessionConfig = SessionConfiguration(
+                SessionConfiguration.SESSION_REGULAR,
+                outputConfigs,
+                executor,
+                object : CameraCaptureSession.StateCallback() {
+                    override fun onConfigured(session: CameraCaptureSession) {
+                        captureSession = session
+                        try {
+                            // Capture the picture
+                            captureSession.capture(captureRequestBuilder.build(), object : CameraCaptureSession.CaptureCallback() {
+                                override fun onCaptureCompleted(session: CameraCaptureSession, request: CaptureRequest, result: TotalCaptureResult) {
+                                    Log.d("MagicService", "Picture taken and saved")
+                                    stopSelf() // Stop service after capturing the image
+                                }
+                            }, backgroundHandler)
+                        } catch (e: CameraAccessException) {
+                            Log.e("MagicService", "Capture failed: ${e.message}")
+                        }
+                    }
+
+                    override fun onConfigureFailed(session: CameraCaptureSession) {
+                        Log.e("MagicService", "Capture session configuration failed")
+                    }
+                }
+            )
+
+            // Start the session
+            cameraDevice.createCaptureSession(sessionConfig)
         } catch (e: Exception) {
             Log.e("MagicService", "Error starting capture session: ${e.message}")
         }
@@ -246,7 +307,72 @@ class MagicServiceClass : Service() {
         }
     }
 
+    // Using JavaMail
     private fun sendEmailWithImage(imageFile: File) {
+        try {
+            // Log the size of the image file
+            Log.d("MagicService", "Image file size: ${imageFile.length()} bytes")
+
+            val props = Properties().apply {
+                put("mail.smtp.host", "smtp.gmail.com") // Use appropriate SMTP host
+                put("mail.smtp.port", "587")
+                put("mail.smtp.auth", "true")
+                put("mail.smtp.starttls.enable", "true")
+            }
+
+            val session = Session.getInstance(props, object : Authenticator() {
+                override fun getPasswordAuthentication(): PasswordAuthentication {
+                    val senderEmail = "zaynii1911491@gmail.com" // Sender email
+                    val senderPassword = "eeyepbpiadbraobu" // Use your app password for Gmail
+                    return PasswordAuthentication(senderEmail, senderPassword)
+                }
+            })
+
+            // Get the current timestamp
+            val currentTime = System.currentTimeMillis()
+            val timestamp = java.text.SimpleDateFormat("yyyy/MM/dd hh:mm a", Locale.getDefault()).format(currentTime)
+
+            val message = MimeMessage(session).apply {
+                setFrom(InternetAddress("zaynii1911491@gmail.com")) // Email from
+                setRecipients(Message.RecipientType.TO, InternetAddress.parse(userEmail)) // Email to
+                subject = "Intruder Alert"
+
+                // Create a multipart message
+                val multipart = MimeMultipart()
+
+                // Create the body part for the text
+                val textBodyPart = MimeBodyPart().apply {
+                    setText("An intruder was detected trying to access your device at $timestamp.")
+                }
+
+                // Create the body part for the attachment
+                val attachmentBodyPart = MimeBodyPart().apply {
+                    attachFile(imageFile)
+                }
+
+                // Add both parts to the multipart
+                multipart.addBodyPart(textBodyPart)
+                multipart.addBodyPart(attachmentBodyPart)
+
+                // Set the content of the message to the multipart
+                setContent(multipart)
+            }
+
+            Transport.send(message)
+            Log.d("MagicService", "Email sent successfully.")
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Log.e("MagicService", "Error sending email: ${e.message}")
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        cameraDevice.close()
+    }
+
+    // Using MailJet API
+    /*private fun sendEmailWithImage(imageFile: File) {
         try {
             val base64Image = encodeImageToBase64(imageFile)
             if (base64Image.isEmpty()) {
@@ -328,13 +454,8 @@ class MagicServiceClass : Service() {
         return android.util.Base64.encodeToString(byteArray, android.util.Base64.NO_WRAP)
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        cameraDevice.close()
-    }
-
     // to save in gallery or any front folders of local storage
-    /*override fun onImageCapture(@NonNull imageFile: File) {
+    override fun onImageCapture(@NonNull imageFile: File) {
         Log.d("MagicService", "onImageCapture: Taking Picture")
 
         val path = imageFile.path

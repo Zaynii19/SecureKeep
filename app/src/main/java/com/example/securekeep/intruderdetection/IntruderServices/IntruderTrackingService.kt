@@ -12,6 +12,7 @@ import android.content.SharedPreferences
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
@@ -23,7 +24,7 @@ class IntruderTrackingService : Service() {
     private var attemptThreshold = 0
     private lateinit var sharedPreferences: SharedPreferences
     private lateinit var keyguardManager: KeyguardManager
-    private val handler = Handler()
+    private var handler = Handler()
     private var isMagicServiceRunning = false
     private val lock = Any() // Lock object for synchronization
 
@@ -39,6 +40,7 @@ class IntruderTrackingService : Service() {
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate() {
         super.onCreate()
+        handler = Handler(Looper.getMainLooper())
         sharedPreferences = getSharedPreferences("IntruderPrefs", MODE_PRIVATE)
         attemptThreshold = sharedPreferences.getInt("AttemptThreshold", 2)
 

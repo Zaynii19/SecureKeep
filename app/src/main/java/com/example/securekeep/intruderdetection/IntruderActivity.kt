@@ -71,21 +71,16 @@ class IntruderActivity : AppCompatActivity() {
         compName = ComponentName(this, MyDeviceAdminReceiver::class.java)
         sharedPreferences = getSharedPreferences("IntruderPrefs", MODE_PRIVATE)
 
-        // Check if the app is already a device admin
-        if (!devicePolicyManager.isAdminActive(compName)) {
-            requestDeviceAdmin()
-        }
-
         isIntruderServiceRunning = MainActivity.isServiceRunning(this@IntruderActivity, IntruderTrackingService::class.java)
 
         // Retrieving selected attempts and alert status
         alertStatus = sharedPreferences.getBoolean("AlertStatus", false)
         isEmail = sharedPreferences.getBoolean("EmailStatus", false)
         attemptThreshold = sharedPreferences.getInt("AttemptThreshold", 2)
-        binding.selectedAttempts.text = attemptThreshold.toString()
+        binding.selectedAttempts.text = String.format(Locale.getDefault(), "%d", attemptThreshold)
 
         loadSelfiesFromStorage()
-        binding.picsCount.text = currentSelfieCount.toString()
+        binding.picsCount.text = String.format(Locale.getDefault(), "%d", currentSelfieCount)
 
         binding.backBtn.setOnClickListener {
             startActivity(Intent(this@IntruderActivity, MainActivity::class.java))
@@ -116,35 +111,40 @@ class IntruderActivity : AppCompatActivity() {
                 editor.putBoolean("AlertStatus", alertStatus)
                 editor.apply()
             } else {
-                alertDialog.apply {
-                    show()
-                    // Set title text color
-                    val titleView = findViewById<TextView>(androidx.appcompat.R.id.alertTitle)
-                    titleView?.setTextColor(Color.BLACK)
-                    // Set message text color
-                    findViewById<TextView>(android.R.id.message)?.setTextColor(Color.BLACK)
+                // Check if the app is already a device admin
+                if (!devicePolicyManager.isAdminActive(compName)) {
+                    requestDeviceAdmin()
+                } else {
+                    alertDialog.apply {
+                        show()
+                        // Set title text color
+                        val titleView = findViewById<TextView>(androidx.appcompat.R.id.alertTitle)
+                        titleView?.setTextColor(Color.BLACK)
+                        // Set message text color
+                        findViewById<TextView>(android.R.id.message)?.setTextColor(Color.BLACK)
+                    }
+                    alertStatus = true
+                    isIntruderServiceRunning = true
+
+                    object : CountDownTimer(10000, 1000) {
+                        override fun onTick(millisUntilFinished: Long) {
+                            alertDialog.setMessage("00:${millisUntilFinished / 1000}")
+                        }
+
+                        override fun onFinish() {
+                            alertDialog.dismiss()
+                            Toast.makeText(this@IntruderActivity, "Intruder Alert Mode Activated", Toast.LENGTH_SHORT).show()
+                            binding.powerBtn.setImageResource(R.drawable.power_off)
+                            binding.activateText.text = getString(R.string.tap_to_deactivate)
+
+                            startBackgroundService()
+                            //Save the alert status in shared preferences
+                            val editor = sharedPreferences.edit()
+                            editor.putBoolean("AlertStatus", alertStatus)
+                            editor.apply()
+                        }
+                    }.start()
                 }
-                alertStatus = true
-                isIntruderServiceRunning = true
-
-                object : CountDownTimer(10000, 1000) {
-                    override fun onTick(millisUntilFinished: Long) {
-                        alertDialog.setMessage("00:${millisUntilFinished / 1000}")
-                    }
-
-                    override fun onFinish() {
-                        alertDialog.dismiss()
-                        Toast.makeText(this@IntruderActivity, "Intruder Alert Mode Activated", Toast.LENGTH_SHORT).show()
-                        binding.powerBtn.setImageResource(R.drawable.power_off)
-                        binding.activateText.text = getString(R.string.tap_to_deactivate)
-
-                        startBackgroundService()
-                        //Save the alert status in shared preferences
-                        val editor = sharedPreferences.edit()
-                        editor.putBoolean("AlertStatus", alertStatus)
-                        editor.apply()
-                    }
-                }.start()
             }
         }
 

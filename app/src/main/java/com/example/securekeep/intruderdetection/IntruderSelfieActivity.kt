@@ -10,6 +10,7 @@ import android.util.Log
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -34,6 +35,13 @@ class IntruderSelfieActivity : AppCompatActivity() {
     private lateinit var selfieAdapter: SelfieAdapter
     private lateinit var selfieList: MutableList<SelfieModel>
 
+    private val onBackPressedCallback = object : OnBackPressedCallback(true) {
+        override fun handleOnBackPressed() {
+            // Handle back button press here
+            startActivity(Intent(this@IntruderSelfieActivity, IntruderActivity::class.java))
+            finish()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -78,12 +86,8 @@ class IntruderSelfieActivity : AppCompatActivity() {
         binding.delBtn.setOnClickListener {
             showDeleteConfirmationDialog()
         }
-    }
 
-    override fun onBackPressed() {
-        super.onBackPressed()
-        startActivity(Intent(this@IntruderSelfieActivity, IntruderActivity::class.java))
-        finish()
+        onBackPressedDispatcher.addCallback(this, onBackPressedCallback)
     }
 
     private fun loadSelfiesFromStorage() {
@@ -158,9 +162,5 @@ class IntruderSelfieActivity : AppCompatActivity() {
             binding.selectAllBtn.visibility = View.GONE
             binding.delBtn.visibility = View.GONE
         }
-    }
-
-    companion object {
-
     }
 }

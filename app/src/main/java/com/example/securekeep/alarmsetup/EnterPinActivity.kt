@@ -21,6 +21,7 @@ import android.os.Vibrator
 import android.util.Log
 import android.view.View
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
@@ -73,6 +74,12 @@ class EnterPinActivity : AppCompatActivity() {
         }
     }
 
+    private val onBackPressedCallback = object : OnBackPressedCallback(true) {
+        override fun handleOnBackPressed() {
+            // Handle back button press here
+            Toast.makeText(this@EnterPinActivity, "PIN required to exit!", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -147,6 +154,8 @@ class EnterPinActivity : AppCompatActivity() {
         triggerAlarm()
 
         setupPinButtons()
+
+        onBackPressedDispatcher.addCallback(this, onBackPressedCallback)
     }
 
     private fun setupPinButtons() {
@@ -423,15 +432,4 @@ class EnterPinActivity : AppCompatActivity() {
             startAlarmService()
         }
     }
-
-    override fun onBackPressed() {
-        if (enteredPin == currentPin) {
-            super.onBackPressed()
-            // Do nothing here to prevent default back button behavior
-        } else {
-            Toast.makeText(this, "PIN required to exit!", Toast.LENGTH_SHORT).show()
-            // Handle the case where the condition is not met
-        }
-    }
-
 }
