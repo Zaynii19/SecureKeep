@@ -153,42 +153,6 @@ class MagicServiceClass : Service() {
         }
     }
 
-    /*private fun startCaptureSession() {
-        try {
-            imageReader = ImageReader.newInstance(1920, 1080, ImageFormat.JPEG, 1)
-            imageReader.setOnImageAvailableListener(imageAvailableListener, backgroundHandler)
-
-            val captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE)
-            captureRequestBuilder.addTarget(imageReader.surface)
-
-            // Set the JPEG orientation
-            captureRequestBuilder.set(CaptureRequest.JPEG_ORIENTATION, 270)
-
-            cameraDevice.createCaptureSession(
-                listOf(imageReader.surface),
-                object : CameraCaptureSession.StateCallback() {
-                    override fun onConfigured(session: CameraCaptureSession) {
-                        captureSession = session
-                        // Capture the picture
-                        captureSession.capture(captureRequestBuilder.build(), object : CameraCaptureSession.CaptureCallback() {
-                            override fun onCaptureCompleted(session: CameraCaptureSession, request: CaptureRequest, result: TotalCaptureResult) {
-                                Log.d("MagicService", "Picture taken and saved")
-                                stopSelf() // Stop service after capturing the image
-                            }
-                        }, backgroundHandler)
-                    }
-
-                    override fun onConfigureFailed(session: CameraCaptureSession) {
-                        Log.e("MagicService", "Capture session configuration failed")
-                    }
-                },
-                backgroundHandler
-            )
-        } catch (e: Exception) {
-            Log.e("MagicService", "Error starting capture session: ${e.message}")
-        }
-    }*/
-
     @RequiresApi(Build.VERSION_CODES.P)
     private fun startCaptureSession() {
         try {
@@ -253,7 +217,6 @@ class MagicServiceClass : Service() {
             it.close()
         }
     }
-
 
     private fun saveCapturedImage(imageBytes: ByteArray) {
         Log.d("MagicService", "saveCapturedImage: Saving Picture")
