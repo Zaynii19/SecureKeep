@@ -8,10 +8,10 @@ android {
 
     defaultConfig {
         applicationId = "com.example.securekeep"
-        minSdk = 26
+        minSdk = 28
         targetSdk = 37
         versionCode = 1
-        versionName = "1.2.1"
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -25,9 +25,11 @@ android {
             )
         }
     }
+
     buildFeatures {
         viewBinding = true
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -61,6 +63,14 @@ dependencies {
     // Navigation
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)
+
+    // CameraX
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+
+    // Lifecycle Service
+    implementation(libs.androidx.lifecycle.service)
 
     // Email
     implementation (libs.mailjet.client) // not used in this project

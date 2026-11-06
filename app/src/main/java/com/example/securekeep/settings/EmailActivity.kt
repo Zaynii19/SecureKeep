@@ -1,6 +1,5 @@
 package com.example.securekeep.settings
 
-import android.content.Context
 import android.content.SharedPreferences
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
@@ -27,7 +26,7 @@ class EmailActivity : AppCompatActivity() {
             insets
         }
 
-        sharedPreferences = getSharedPreferences("IntruderPrefs", Context.MODE_PRIVATE)
+        sharedPreferences = getSharedPreferences("IntruderPrefs", MODE_PRIVATE)
         val userEmail = sharedPreferences.getString("UserEmail", null)
 
         if (userEmail.isNullOrEmpty()){
@@ -51,5 +50,4 @@ class EmailActivity : AppCompatActivity() {
 
         binding.currentEmail.text = userEmail
     }
-
 }

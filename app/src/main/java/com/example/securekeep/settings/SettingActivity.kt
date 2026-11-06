@@ -1,7 +1,5 @@
 package com.example.securekeep.settings
 
-import android.app.Activity
-import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.media.AudioManager
@@ -9,20 +7,22 @@ import android.media.MediaPlayer
 import android.media.Ringtone
 import android.media.RingtoneManager
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
-import android.widget.Button
 import android.widget.SeekBar
 import androidx.activity.enableEdgeToEdge
-import androidx.annotation.RequiresApi
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
+import androidx.core.content.IntentCompat
+import androidx.core.content.edit
+import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.securekeep.R
 import com.example.securekeep.databinding.ActivitySettingBinding
+import com.example.securekeep.databinding.DialogTonePickerBinding
 
 class SettingActivity : AppCompatActivity() {
     private val binding by lazy {
@@ -38,6 +38,20 @@ class SettingActivity : AppCompatActivity() {
     private var mediaPlayer: MediaPlayer? = null
     private var systemToneUri: Uri? = null
 
+    private val ringtonePickerLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            val uri: Uri? = result.data?.let { data ->
+                IntentCompat.getParcelableExtra(data, RingtoneManager.EXTRA_RINGTONE_PICKED_URI, Uri::class.java)
+            }
+            if (uri != null) {
+                systemToneUri = uri
+                playTone(uri) // Play the selected ringtone automatically
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -48,7 +62,7 @@ class SettingActivity : AppCompatActivity() {
             insets
         }
 
-        audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
         sharedPreferences = getSharedPreferences("AlarmPrefs", MODE_PRIVATE)
 
         // Retrieve sound level from shared preferences
@@ -59,11 +73,11 @@ class SettingActivity : AppCompatActivity() {
         // Retrieve tone settings from SharedPreferences
         toneId = sharedPreferences.getInt("alarm_tone", R.raw.alarm_tune_1)
         val toneUriString = sharedPreferences.getString("alarm_tone_uri", null)
-        systemToneUri = toneUriString?.let { Uri.parse(it) } // Convert to Uri if exists
+        systemToneUri = toneUriString?.toUri() // Convert to Uri if exists
 
         binding.alarmToneName.text = when (toneId) {
             R.raw.alarm_tune_1 -> "Tone 1"
-            R.raw.alarm_tune_1 -> "Tone 2"
+            R.raw.alarm_tune_2 -> "Tone 2"
             R.raw.alarm_tune_3 -> "Tone 3"
             R.raw.alarm_tune_4 -> "Tone 4"
             R.raw.alarm_tune_5 -> "Tone 5"
@@ -84,9 +98,9 @@ class SettingActivity : AppCompatActivity() {
                 currentSoundLevel = progress
 
                 // Store sound level in shared preferences
-                val editor = sharedPreferences.edit()
-                editor.putInt("SOUND_LEVEL", currentSoundLevel)
-                editor.apply()
+                sharedPreferences.edit {
+                    putInt("SOUND_LEVEL", currentSoundLevel)
+                }
             }
 
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
@@ -102,9 +116,9 @@ class SettingActivity : AppCompatActivity() {
                 sensitivityThreshold = progress / 100f * 30.0f
 
                 // Store motion sensitivity threshold in shared preferences
-                val editor = sharedPreferences.edit()
-                editor.putFloat("motionSensitivity", sensitivityThreshold)
-                editor.apply()
+                sharedPreferences.edit {
+                    putFloat("motionSensitivity", sensitivityThreshold)
+                }
             }
 
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
@@ -128,19 +142,18 @@ class SettingActivity : AppCompatActivity() {
 
     private fun showTonePickerDialog() {
         val builder = AlertDialog.Builder(this)
-        val inflater = layoutInflater
-        val dialogView = inflater.inflate(R.layout.dialog_tone_picker, null)
-        builder.setView(dialogView)
+        val binder = DialogTonePickerBinding.inflate(layoutInflater)
+        builder.setView(binder.root)
 
         val dialog = builder.create()
 
         val tuneOptions = listOf(
-            dialogView.findViewById<ConstraintLayout>(R.id.tune1),
-            dialogView.findViewById<ConstraintLayout>(R.id.tune2),
-            dialogView.findViewById<ConstraintLayout>(R.id.tune3),
-            dialogView.findViewById<ConstraintLayout>(R.id.tune4),
-            dialogView.findViewById<ConstraintLayout>(R.id.tune5),
-            dialogView.findViewById<ConstraintLayout>(R.id.systemTunes)
+            binder.tune1,
+            binder.tune2,
+            binder.tune3,
+            binder.tune4,
+            binder.tune5,
+            binder.systemTunes
         )
 
         val tuneIds = listOf(
@@ -158,12 +171,13 @@ class SettingActivity : AppCompatActivity() {
                     stopMediaPlayer()
 
                     // Open system ringtone picker
-                    val ringtonePickerIntent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER)
-                    ringtonePickerIntent.putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM)
-                    ringtonePickerIntent.putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
-                    ringtonePickerIntent.putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
-                    ringtonePickerIntent.putExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI, systemToneUri)
-                    startActivityForResult(ringtonePickerIntent, REQUEST_CODE_RINGTONE_PICKER)
+                    val ringtonePickerIntent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
+                        putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM)
+                        putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
+                        putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
+                        putExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI, systemToneUri)
+                    }
+                    ringtonePickerLauncher.launch(ringtonePickerIntent)
 
                     // Update the selected layout background for system tones
                     updateSelectedToneLayout(layout, 0) // Pass 0 for system tone selection
@@ -175,13 +189,8 @@ class SettingActivity : AppCompatActivity() {
             }
         }
 
-        dialog.setOnDismissListener {
-            stopMediaPlayer() // Ensure MediaPlayer is stopped when the dialog is dismissed
-        }
-
         // Handle Apply button click
-        val applyBtn = dialogView.findViewById<Button>(R.id.applyBtn)
-        applyBtn.setOnClickListener {
+        binder.applyBtn.setOnClickListener {
             toneId = selectedToneId // Set the currently selected tone ID
 
             // Stop any currently playing tone, including system tones
@@ -204,38 +213,24 @@ class SettingActivity : AppCompatActivity() {
             }
 
             // Save tone ID or URI in shared preferences
-            val editor = sharedPreferences.edit()
-            if (toneId == 0) { // If toneId is 0, it means a system tone is selected
-                systemToneUri?.let { editor.putString("alarm_tone_uri", it.toString()) }
-                editor.putInt("alarm_tone", 0) // Store 0 as toneId to indicate system tone
-            } else {
-                editor.putInt("alarm_tone", toneId)
-                editor.putString("alarm_tone_uri", null) // Clear system tone URI
+            sharedPreferences.edit {
+                if (toneId == 0) { // If toneId is 0, it means a system tone is selected
+                    systemToneUri?.let { putString("alarm_tone_uri", it.toString()) }
+                    putInt("alarm_tone", 0) // Store 0 as toneId to indicate system tone
+                } else {
+                    putInt("alarm_tone", toneId)
+                    putString("alarm_tone_uri", null) // Clear system tone URI
+                }
             }
-            editor.apply()
 
             dialog.dismiss()
         }
 
+        dialog.setOnDismissListener {
+            stopMediaPlayer() // Ensure MediaPlayer is stopped when the dialog is dismissed
+        }
 
         dialog.show()
-        dialog.setOnDismissListener {
-            stopMediaPlayer()
-        }
-    }
-
-
-    // Handle the result from the ringtone picker
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQUEST_CODE_RINGTONE_PICKER && resultCode == Activity.RESULT_OK) {
-            val uri: Uri? = data?.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI, Uri::class.java)
-            if (uri != null) {
-                systemToneUri = uri
-                playTone(uri) // Play the selected ringtone automatically
-            }
-        }
     }
 
 
@@ -286,9 +281,5 @@ class SettingActivity : AppCompatActivity() {
         super.onDestroy()
         // Release MediaPlayer if the activity is destroyed to avoid memory leaks
         mediaPlayer?.release()
-    }
-
-    companion object {
-        private const val REQUEST_CODE_RINGTONE_PICKER = 1001
     }
 }

@@ -7,7 +7,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.securekeep.R
-import com.example.securekeep.alarmsetup.EnterPinActivity
+import com.example.securekeep.alarmSetup.EnterPinActivity
 import com.example.securekeep.databinding.ActivityPinBinding
 
 class PinActivity : AppCompatActivity() {

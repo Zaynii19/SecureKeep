@@ -5,7 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".earphonedetection.EarphonesActivity"
+    tools:context=".earphoneDetection.EarphonesActivity"
     android:background="@color/app_background">
 
     <LinearLayout

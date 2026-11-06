@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     package="com.example.securekeep">
 
     <!-- Permissions -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.VIBRATE" />
-    <!-- for wifi detection feature -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- for Wi-Fi detection feature -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
@@ -24,31 +24,20 @@
     <uses-permission android:name="android.permission.REORDER_TASKS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <!-- Scoped Storage Permissions -->
-    <uses-permission
-        android:name="android.permission.READ_MEDIA_IMAGES"
-        android:maxSdkVersion="34" />
-    <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
-    <uses-permission
-        android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:maxSdkVersion="32" />
-    <uses-permission
-        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        android:maxSdkVersion="28" />
     <!-- Foreground Service Permissions for API 34+ -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Camera Features -->
-    <uses-feature android:name="android.hardware.camera.flash" />
+    <uses-feature android:name="android.hardware.camera.flash"
+        android:required="false" />
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
 
     <application
-        android:name=".alarmsetup.ApplicationClass"
+        android:name=".ApplicationClass"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -64,11 +53,11 @@
             android:name=".AboutActivity"
             android:exported="false" />
         <activity
-            android:name=".intruderdetection.FullPictureActivity"
+            android:name=".intruderDetection.FullPictureActivity"
             android:exported="false" />
         <activity
-            android:name=".intruderdetection.IntruderSelfieActivity"
-            android:exported="false" /> <!-- Activities -->
+            android:name=".intruderDetection.IntruderSelfieActivity"
+            android:exported="false" />
         <activity
             android:name=".settings.PinActivity"
             android:exported="false" />
@@ -79,35 +68,36 @@
             android:name=".settings.SettingActivity"
             android:exported="false" />
         <activity
-            android:name=".alarmsetup.EnterPinActivity"
+            android:name=".alarmSetup.EnterPinActivity"
             android:exported="true" />
         <activity
-            android:name=".earphonedetection.EarphonesActivity"
+            android:name=".earphoneDetection.EarphonesActivity"
             android:exported="false" />
         <activity
-            android:name=".overchargedetection.OverChargeActivity"
+            android:name=".overChargeDetection.OverChargeActivity"
             android:exported="false" />
         <activity
-            android:name=".wifidetection.WifiActivity"
+            android:name=".wifiDetection.WifiActivity"
             android:exported="false" />
         <activity
-            android:name=".chargingdetect.ChargeDetectActivity"
+            android:name=".chargingDetect.ChargeDetectActivity"
             android:exported="false" />
         <activity
-            android:name=".antipocket.AntiPocketActivity"
+            android:name=".antiPocket.AntiPocketActivity"
             android:exported="false" />
         <activity
-            android:name=".touchdetection.TouchPhoneActivity"
+            android:name=".touchDetection.TouchPhoneActivity"
             android:exported="false" />
         <activity
-            android:name=".intruderdetection.IntruderActivity"
+            android:name=".intruderDetection.IntruderActivity"
             android:exported="false" />
         <activity
-            android:name=".intruderdetection.PermissionActivity"
+            android:name=".intruderDetection.PermissionActivity"
             android:exported="false" />
         <activity
             android:name=".SplashScreen"
-            android:exported="true">
+            android:exported="true"
+            android:theme="@style/Theme.RemoveSplashScreenTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -119,7 +109,7 @@
             android:exported="true" />
         <!-- Receivers -->
         <receiver
-            android:name=".intruderdetection.IntruderServices.MyDeviceAdminReceiver"
+            android:name=".intruderDetection.intruderServices.MyDeviceAdminReceiver"
             android:exported="true"
             android:permission="android.permission.BIND_DEVICE_ADMIN">
             <meta-data
@@ -132,40 +122,48 @@
         </receiver>
 
         <service
-            android:name=".intruderdetection.IntruderServices.IntruderTrackingService"
+            android:name=".intruderDetection.intruderServices.IntruderTrackingService"
             android:exported="true"
             android:foregroundServiceType="camera"
             android:permission="android.permission.BIND_DEVICE_ADMIN" />
         <service
-            android:name=".intruderdetection.IntruderServices.MagicServiceClass"
+            android:name=".intruderDetection.intruderServices.MagicServiceClass"
             android:exported="false"
             android:foregroundServiceType="camera" />
         <service
-            android:name=".touchdetection.MotionDetectionService"
+            android:name=".touchDetection.MotionDetectionService"
             android:exported="false"
-            android:foregroundServiceType="specialUse" />
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Anti-theft motion detection to trigger alarm when device is moved" />
+        </service>
         <service
-            android:name=".antipocket.ProximityDetectionService"
+            android:name=".antiPocket.ProximityDetectionService"
             android:exported="false"
-            android:foregroundServiceType="specialUse" />
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Anti-pocket removal detection to trigger alarm when device is taken out" />
+        </service>
         <service
-            android:name=".alarmsetup.AlarmService"
+            android:name=".alarmSetup.AlarmService"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
         <service
-            android:name=".wifidetection.WifiDetectionService"
+            android:name=".wifiDetection.WifiDetectionService"
             android:exported="false"
             android:foregroundServiceType="connectedDevice" />
         <service
-            android:name=".overchargedetection.BatteryDetectionService"
+            android:name=".overChargeDetection.BatteryDetectionService"
             android:exported="false"
             android:foregroundServiceType="connectedDevice" />
         <service
-            android:name=".chargingdetect.ChargingDetectionService"
+            android:name=".chargingDetect.ChargingDetectionService"
             android:exported="false"
             android:foregroundServiceType="connectedDevice" />
         <service
-            android:name=".earphonedetection.EarphoneDetectionService"
+            android:name=".earphoneDetection.EarphoneDetectionService"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback|connectedDevice" />
     </application>

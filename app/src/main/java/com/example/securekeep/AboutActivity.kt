@@ -3,7 +3,6 @@ package com.example.securekeep
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.graphics.Color
-import android.net.Uri
 import android.os.Bundle
 import android.widget.TextView
 import android.widget.Toast
@@ -11,6 +10,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.securekeep.databinding.ActivityAboutBinding
@@ -66,7 +66,7 @@ class AboutActivity : AppCompatActivity() {
             // Create a chooser to ensure the intent is handled by email apps
             try {
                 startActivity(Intent.createChooser(emailIntent, "Choose an email client"))
-            } catch (e: ActivityNotFoundException) {
+            } catch (_: ActivityNotFoundException) {
                 Toast.makeText(this, "No email apps found", Toast.LENGTH_SHORT).show()
             }
         }
@@ -76,16 +76,15 @@ class AboutActivity : AppCompatActivity() {
             val linkedInUrl = "https://www.linkedin.com/in/ali-zain-7b7066317?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app"
 
             val linkedInIntent = Intent(Intent.ACTION_VIEW).apply {
-                data = Uri.parse(linkedInUrl)
+                data = linkedInUrl.toUri()
             }
 
             // Create a chooser to let the user select from available apps
             try {
                 startActivity(Intent.createChooser(linkedInIntent, "Open with"))
-            } catch (e: ActivityNotFoundException) {
+            } catch (_: ActivityNotFoundException) {
                 Toast.makeText(this, "No suitable apps found", Toast.LENGTH_SHORT).show()
             }
         }
-
     }
 }

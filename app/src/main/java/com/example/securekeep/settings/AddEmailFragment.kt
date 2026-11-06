@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.content.edit
 import com.example.securekeep.databinding.FragmentAddEmailBinding
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 
@@ -33,7 +34,8 @@ class AddEmailFragment : BottomSheetDialogFragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        sharedPreferences = requireActivity().getSharedPreferences("IntruderPrefs", Context.MODE_PRIVATE)
+        sharedPreferences =
+            requireActivity().getSharedPreferences("IntruderPrefs", Context.MODE_PRIVATE)
 
     }
 
@@ -45,15 +47,17 @@ class AddEmailFragment : BottomSheetDialogFragment() {
         binding.saveBtn.setOnClickListener {
             if (binding.email.text.isNullOrEmpty() ||
                 !binding.email.text!!.contains("@", false) ||
-                !binding.email.text!!.contains(".com", false)){
+                !binding.email.text!!.contains(".com", false)
+            ) {
                 Toast.makeText(requireContext(), "Enter Valid Email", Toast.LENGTH_SHORT).show()
-            }else{
+            } else {
                 userEmail = binding.email.text.toString()
                 //Save the User Email in shared preferences
-                val editor = sharedPreferences.edit()
-                editor.putString("UserEmail", userEmail)
-                editor.apply()
-                Toast.makeText(requireContext(), "Email Saved Successfully", Toast.LENGTH_SHORT).show()
+                sharedPreferences.edit {
+                    putString("UserEmail", userEmail)
+                }
+                Toast.makeText(requireContext(), "Email Saved Successfully", Toast.LENGTH_SHORT)
+                    .show()
                 onEmailUpdatedListener?.onEmailUpdated(userEmail)
                 dismiss()
             }

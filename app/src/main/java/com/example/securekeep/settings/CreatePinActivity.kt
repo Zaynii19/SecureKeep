@@ -124,6 +124,3 @@ class CreatePinActivity : AppCompatActivity() {
         }
     }
 }
-
-
-

@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/app_background"
-    tools:context=".intruderdetection.FullPictureActivity">
+    tools:context=".intruderDetection.FullPictureActivity">
 
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"

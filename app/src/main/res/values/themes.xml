@@ -6,4 +6,11 @@
     </style>
 
     <style name="Theme.SecureKeep" parent="Base.Theme.SecureKeep" />
+
+    <!-- Style to remove Default Splash -->
+    <style name="Theme.RemoveSplashScreenTheme" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFullscreen">true</item>
+    </style>
 </resources>

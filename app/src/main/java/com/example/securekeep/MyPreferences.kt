@@ -2,6 +2,7 @@ package com.example.securekeep
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 
 class MyPreferences(context: Context) {
 
@@ -15,32 +16,30 @@ class MyPreferences(context: Context) {
         isVibrate = false
         isFlash = false
 
-        val editor = sharedPreferences.edit()
+        sharedPreferences.edit {
+            putBoolean("AlarmStatusTouch", isAlarmActive)
+            putBoolean("FlashStatusTouch", isFlash)
+            putBoolean("VibrateStatusTouch", isVibrate)
 
-        editor.putBoolean("AlarmStatusTouch", isAlarmActive)
-        editor.putBoolean("FlashStatusTouch", isFlash)
-        editor.putBoolean("VibrateStatusTouch", isVibrate)
+            putBoolean("AlarmStatusPocket", isAlarmActive)
+            putBoolean("FlashStatusPocket", isFlash)
+            putBoolean("VibrateStatusPocket", isVibrate)
 
-        editor.putBoolean("AlarmStatusPocket", isAlarmActive)
-        editor.putBoolean("FlashStatusPocket", isFlash)
-        editor.putBoolean("VibrateStatusPocket", isVibrate)
+            putBoolean("AlarmStatusOverCharge", isAlarmActive)
+            putBoolean("FlashStatusOverCharge", isFlash)
+            putBoolean("VibrateStatusTouch", isVibrate)
 
-        editor.putBoolean("AlarmStatusOverCharge", isAlarmActive)
-        editor.putBoolean("FlashStatusOverCharge", isFlash)
-        editor.putBoolean("VibrateStatusTouch", isVibrate)
+            putBoolean("AlarmStatusWifi", isAlarmActive)
+            putBoolean("FlashStatusWifi", isFlash)
+            putBoolean("VibrateStatusWifi", isVibrate)
 
-        editor.putBoolean("AlarmStatusWifi", isAlarmActive)
-        editor.putBoolean("FlashStatusWifi", isFlash)
-        editor.putBoolean("VibrateStatusWifi", isVibrate)
+            putBoolean("AlarmStatusCharge", isAlarmActive)
+            putBoolean("FlashStatusCharge", isFlash)
+            putBoolean("VibrateStatusCharge", isVibrate)
 
-        editor.putBoolean("AlarmStatusCharge", isAlarmActive)
-        editor.putBoolean("FlashStatusCharge", isFlash)
-        editor.putBoolean("VibrateStatusCharge", isVibrate)
-
-        editor.putBoolean("AlarmStatusEarphone", isAlarmActive)
-        editor.putBoolean("FlashStatusEarphone", isFlash)
-        editor.putBoolean("VibrateStatusEarphone", isVibrate)
-
-        editor.apply()
+            putBoolean("AlarmStatusEarphone", isAlarmActive)
+            putBoolean("FlashStatusEarphone", isFlash)
+            putBoolean("VibrateStatusEarphone", isVibrate)
+        }
     }
 }
