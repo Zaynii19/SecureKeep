@@ -1,5 +1,5 @@
 [versions]
-agp = "9.5.0"
+agp = "9.5.1"
 androidMail = "1.6.8"
 glide = "5.0.9"
 coreKtx = "1.19.1"
